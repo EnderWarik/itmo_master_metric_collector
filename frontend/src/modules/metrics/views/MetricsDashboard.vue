@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import AppShell from '@/modules/layout/components/AppShell.vue';
 import CardSurface from '@/shared/ui/CardSurface.vue';
 import MetricForm from '../components/MetricForm.vue';
+import type { MetricFormPayload } from '../components/MetricForm.vue';
 import MetricResultsPanel from '../components/MetricResultsPanel.vue';
 import ScenarioRecorder from '../components/ScenarioRecorder.vue';
 import E2EResultsPanel from '../components/E2EResultsPanel.vue';
@@ -22,7 +23,58 @@ const {
 type TabType = 'metrics' | 'e2e';
 const activeTab = ref<TabType>('metrics');
 
-// E2E state
+// E2E state for main metrics tab
+const metricsE2EResult = ref<E2EResult | null>(null);
+const isMetricsE2ERunning = ref(false);
+
+// Pizza preset scenario
+const pizzaScenario: Scenario = {
+  name: 'Заказ пиццы',
+  url: 'https://micro.pizza.ew-production.ru/',
+  steps: [
+    { action: 'type', selector: 'input[name="pizza_name"]', value: 'my pizza', label: 'Ввод названия пиццы' },
+    { action: 'click', selector: 'div[class*="result"] button', label: 'Клик Готовьте' },
+    { action: 'wait', value: 500, label: 'Ожидание' },
+    { action: 'type', selector: 'input[name="street"]', value: 'Ленина', label: 'Ввод улицы' },
+    { action: 'type', selector: 'input[name="house"]', value: '43', label: 'Ввод дома' },
+    { action: 'type', selector: 'input[name="tel"]', value: '+79141234567', label: 'Ввод телефона' },
+    { action: 'click', selector: 'button[type="submit"]', label: 'Оформить заказ' },
+    { action: 'wait', value: 1000, label: 'Ожидание ответа' },
+  ],
+};
+
+async function handleCollect(payload: MetricFormPayload) {
+  // Reset E2E results
+  metricsE2EResult.value = null;
+  
+  // Run standard metrics
+  collectAll({ url: payload.url });
+  
+  // Run E2E if enabled
+  if (payload.runE2E) {
+    isMetricsE2ERunning.value = true;
+    try {
+      metricsE2EResult.value = await metricsApi.runE2EScenario(pizzaScenario);
+    } catch (err) {
+      metricsE2EResult.value = {
+        scenarioName: pizzaScenario.name,
+        url: pizzaScenario.url,
+        steps: [],
+        totalDurationMs: 0,
+        totalLongTasks: 0,
+        totalLongTasksMs: 0,
+        avgInputDelayMs: 0,
+        maxInputDelayMs: 0,
+        success: false,
+        error: (err as Error).message,
+      };
+    } finally {
+      isMetricsE2ERunning.value = false;
+    }
+  }
+}
+
+// E2E tab state
 const e2eResult = ref<E2EResult | null>(null);
 const isE2ERunning = ref(false);
 
@@ -83,16 +135,25 @@ async function runE2EScenario(scenario: Scenario) {
         <MetricForm
           :metric-labels="definitions.map((definition) => definition.label)"
           :is-loading-definitions="isLoadingDefinitions"
-          :is-collecting="isCollecting"
-          @submit="collectAll"
+          :is-collecting="isCollecting || isMetricsE2ERunning"
+          @submit="handleCollect"
         />
       </CardSurface>
 
-      <MetricResultsPanel
-        :results="results"
-        :error-message="errorMessage"
-        :is-collecting="isCollecting"
-      />
+      <div class="results-column">
+        <MetricResultsPanel
+          :results="results"
+          :error-message="errorMessage"
+          :is-collecting="isCollecting"
+        />
+        
+        <!-- E2E Results inline -->
+        <E2EResultsPanel 
+          v-if="metricsE2EResult || isMetricsE2ERunning"
+          :result="metricsE2EResult" 
+          :is-running="isMetricsE2ERunning" 
+        />
+      </div>
     </div>
 
     <!-- E2E Tab -->
@@ -170,5 +231,11 @@ async function runE2EScenario(scenario: Scenario) {
 .card-header__title {
   margin: 0;
   color: #111827;
+}
+
+.results-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 </style>

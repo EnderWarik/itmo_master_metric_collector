@@ -10,12 +10,13 @@ export class MetricRegistry {
   constructor(
     @Inject(METRIC_COLLECTORS)
     private readonly collectors: MetricCollector[],
-  ) {}
+  ) { }
 
   listDefinitions(): MetricDefinition[] {
-    return this.collectors.map(({ key, label, description }) => ({
+    return this.collectors.map(({ key, label, group, description }) => ({
       key,
       label,
+      group,
       description,
     }));
   }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { performance } from 'node:perf_hooks';
 import {
   MetricCollector,
+  MetricGroup,
   MetricResult,
 } from './metric-collector.interface';
 
@@ -14,10 +15,10 @@ export interface PingMetricPayload {
 
 @Injectable()
 export class PingMetricCollector
-  implements MetricCollector<PingMetricPayload>
-{
+  implements MetricCollector<PingMetricPayload> {
   readonly key = 'availability.ping';
   readonly label = 'Availability ping';
+  readonly group = MetricGroup.Server;
   readonly description =
     'Выполняет простой GET-запрос и измеряет время отклика.';
 
@@ -33,6 +34,7 @@ export class PingMetricCollector
       return {
         key: this.key,
         label: this.label,
+        group: this.group,
         description: this.description,
         payload: {
           elapsedMs: Math.round(elapsedMs),
@@ -46,6 +48,7 @@ export class PingMetricCollector
       return {
         key: this.key,
         label: this.label,
+        group: this.group,
         description: this.description,
         payload: {
           elapsedMs: Math.round(elapsedMs),

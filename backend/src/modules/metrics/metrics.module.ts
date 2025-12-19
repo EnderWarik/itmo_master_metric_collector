@@ -5,6 +5,7 @@ import { MetricRegistry } from './metric-registry.service';
 import { METRIC_COLLECTORS } from './metrics.tokens';
 import { PingMetricCollector } from './collectors/ping-metric.collector';
 import { TtfbMetricCollector } from './collectors/ttfb-metric.collector';
+import { DomMetricCollector } from './collectors/dom-metric.collector';
 
 @Module({
   controllers: [MetricsController],
@@ -13,16 +14,17 @@ import { TtfbMetricCollector } from './collectors/ttfb-metric.collector';
     MetricRegistry,
     PingMetricCollector,
     TtfbMetricCollector,
+    DomMetricCollector,
     {
       provide: METRIC_COLLECTORS,
       useFactory: (
         pingCollector: PingMetricCollector,
         ttfbCollector: TtfbMetricCollector,
-      ) => [pingCollector, ttfbCollector],
-      inject: [PingMetricCollector, TtfbMetricCollector],
+        domCollector: DomMetricCollector,
+      ) => [pingCollector, ttfbCollector, domCollector],
+      inject: [PingMetricCollector, TtfbMetricCollector, DomMetricCollector],
     },
   ],
   exports: [MetricsService],
 })
-export class MetricsModule {}
-
+export class MetricsModule { }

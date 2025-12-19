@@ -5,6 +5,7 @@ import { request as httpsRequest } from 'node:https';
 import { URL } from 'node:url';
 import {
   MetricCollector,
+  MetricGroup,
   MetricResult,
 } from './metric-collector.interface';
 
@@ -37,6 +38,7 @@ export class TtfbMetricCollector
   implements MetricCollector<TtfbMetricPayload> {
   readonly key = 'page.ttfb';
   readonly label = 'Time To First Byte';
+  readonly group = MetricGroup.Server;
   readonly description =
     'Измеряет время от отправки HTTP-запроса до получения первого байта ответа с детализацией по фазам (DNS, TCP, TLS, Server).';
 
@@ -46,6 +48,7 @@ export class TtfbMetricCollector
     return {
       key: this.key,
       label: this.label,
+      group: this.group,
       description: this.description,
       payload,
       collectedAt: new Date(),

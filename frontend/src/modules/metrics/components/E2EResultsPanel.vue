@@ -29,6 +29,9 @@ interface E2EResult {
   totalFrames?: number;
   droppedFrames?: number;
   fpsTimeline?: { timeMs: number; fps: number }[];
+  avgHeapUsagePercent?: number;
+  maxHeapUsagePercent?: number;
+  heapTimeline?: { time: number; usedSize: number; totalSize: number; usagePercent: number }[];
   success: boolean;
   error?: string;
 }
@@ -79,6 +82,45 @@ const fpsChartArea = computed(() => {
   return `${startX},${bottomY} ${points.join(' ')} ${endX},${bottomY}`;
 });
 
+// Heap chart computeds
+const heapChartPath = computed(() => {
+  if (!props.result?.heapTimeline?.length) return '';
+  const timeline = props.result.heapTimeline;
+  const maxTime = Math.max(...timeline.map(p => p.time));
+  
+  const points = timeline.map((point, i) => {
+    const x = chartPadding + (point.time / maxTime) * (chartWidth - 2 * chartPadding);
+    const y = chartHeight - chartPadding - (point.usagePercent / 100) * (chartHeight - 2 * chartPadding);
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  });
+  
+  return points.join(' ');
+});
+
+const heapChartArea = computed(() => {
+  if (!props.result?.heapTimeline?.length) return '';
+  const timeline = props.result.heapTimeline;
+  const maxTime = Math.max(...timeline.map(p => p.time));
+  
+  const points = timeline.map((point) => {
+    const x = chartPadding + (point.time / maxTime) * (chartWidth - 2 * chartPadding);
+    const y = chartHeight - chartPadding - (point.usagePercent / 100) * (chartHeight - 2 * chartPadding);
+    return `${x},${y}`;
+  });
+  
+  const startX = chartPadding;
+  const endX = chartPadding + (chartWidth - 2 * chartPadding);
+  const bottomY = chartHeight - chartPadding;
+  
+  return `${startX},${bottomY} ${points.join(' ')} ${endX},${bottomY}`;
+});
+
+function getHeapClass(percent: number): string {
+  if (percent <= 50) return 'good';
+  if (percent <= 80) return 'average';
+  return 'poor';
+}
+
 // Generate fixed time labels for X-axis (1s, 2s, 3s, ...)
 const timeLabels = computed(() => {
   if (!props.result?.fpsTimeline?.length) return [];
@@ -86,9 +128,30 @@ const timeLabels = computed(() => {
   const maxSeconds = Math.ceil(maxTime / 1000);
   const labels: { second: number; x: number }[] = [];
   
-  for (let s = 1; s < maxSeconds; s++) {
+  for (let s = 1; s <= maxSeconds; s++) {
     const x = chartPadding + (s * 1000 / maxTime) * (chartWidth - 2 * chartPadding);
-    labels.push({ second: s, x });
+    // Не показываем метку если она выходит за правый край
+    if (x <= chartWidth - chartPadding + 10) {
+      labels.push({ second: s, x });
+    }
+  }
+  
+  return labels;
+});
+
+// Generate fixed time labels for heap chart X-axis
+const heapTimeLabels = computed(() => {
+  if (!props.result?.heapTimeline?.length) return [];
+  const maxTime = Math.max(...props.result.heapTimeline.map(p => p.time));
+  const maxSeconds = Math.ceil(maxTime / 1000);
+  const labels: { second: number; x: number }[] = [];
+  
+  for (let s = 1; s <= maxSeconds; s++) {
+    const x = chartPadding + (s * 1000 / maxTime) * (chartWidth - 2 * chartPadding);
+    // Не показываем метку если она выходит за правый край
+    if (x <= chartWidth - chartPadding + 10) {
+      labels.push({ second: s, x });
+    }
   }
   
   return labels;
@@ -247,6 +310,81 @@ function getFpsClass(fps: number): string {
               <linearGradient id="fpsGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stop-color="#4f46e5" />
                 <stop offset="100%" stop-color="#4f46e5" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <!-- Heap Usage Timeline Chart -->
+        <div v-if="result.heapTimeline && result.heapTimeline.length > 0" class="heap-chart-section">
+          <h4>🧠 Heap Usage Timeline</h4>
+          <div class="heap-metrics-row">
+            <span class="heap-metric">
+              Avg: <strong :class="'heap-' + getHeapClass(result.avgHeapUsagePercent || 0)">{{ result.avgHeapUsagePercent }}%</strong>
+            </span>
+            <span class="heap-metric">
+              Max: <strong :class="'heap-' + getHeapClass(result.maxHeapUsagePercent || 0)">{{ result.maxHeapUsagePercent }}%</strong>
+            </span>
+          </div>
+          <svg :width="chartWidth" :height="chartHeight" class="heap-chart">
+            <!-- Grid lines -->
+            <line :x1="chartPadding" :y1="chartHeight - chartPadding" :x2="chartWidth - chartPadding" :y2="chartHeight - chartPadding" stroke="#e2e8f0" />
+            <line :x1="chartPadding" :y1="chartPadding" :x2="chartPadding" :y2="chartHeight - chartPadding" stroke="#e2e8f0" />
+            
+            <!-- Time labels on X axis -->
+            <template v-for="label in heapTimeLabels" :key="'heap-tick-' + label.second">
+              <line 
+                :x1="label.x" 
+                :y1="chartHeight - chartPadding" 
+                :x2="label.x" 
+                :y2="chartHeight - chartPadding + 5" 
+                stroke="#94a3b8"
+              />
+              <text 
+                :x="label.x" 
+                :y="chartHeight - chartPadding + 15" 
+                font-size="10" 
+                fill="#94a3b8" 
+                text-anchor="middle"
+              >{{ label.second }}s</text>
+            </template>
+            
+            <!-- 80% warning line -->
+            <line 
+              :x1="chartPadding" 
+              :y1="chartHeight - chartPadding - (0.8 * (chartHeight - 2 * chartPadding))"
+              :x2="chartWidth - chartPadding" 
+              :y2="chartHeight - chartPadding - (0.8 * (chartHeight - 2 * chartPadding))"
+              stroke="#f59e0b" 
+              stroke-dasharray="4"
+              opacity="0.5"
+            />
+            <text :x="chartWidth - chartPadding + 5" :y="chartHeight - chartPadding - (0.8 * (chartHeight - 2 * chartPadding)) + 4" font-size="10" fill="#f59e0b">80%</text>
+            
+            <!-- Area fill -->
+            <polygon :points="heapChartArea" fill="url(#heapGradient)" opacity="0.3" />
+            
+            <!-- Line -->
+            <path :d="heapChartPath" fill="none" stroke="#f59e0b" stroke-width="2" />
+            
+            <!-- Data points with tooltips -->
+            <template v-for="(point, i) in result.heapTimeline" :key="'heap-point-' + i">
+              <circle 
+                :cx="chartPadding + (point.time / Math.max(...result.heapTimeline.map(p => p.time))) * (chartWidth - 2 * chartPadding)"
+                :cy="chartHeight - chartPadding - (point.usagePercent / 100) * (chartHeight - 2 * chartPadding)"
+                r="3"
+                fill="#f59e0b"
+                opacity="0.7"
+              >
+                <title>{{ (point.time / 1000).toFixed(1) }}s: {{ point.usagePercent }}% ({{ (point.usedSize / 1024 / 1024).toFixed(1) }}MB)</title>
+              </circle>
+            </template>
+            
+            <!-- Gradient definition -->
+            <defs>
+              <linearGradient id="heapGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
               </linearGradient>
             </defs>
           </svg>
@@ -525,5 +663,44 @@ function getFpsClass(fps: number): string {
   font-size: 0.75rem;
   color: #94a3b8;
   padding: 0.25rem 20px;
+}
+
+.heap-chart-section {
+  margin-top: 1.5rem;
+}
+
+.heap-chart-section h4 {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.heap-metrics-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.heap-metric strong {
+  font-weight: 600;
+}
+
+.heap-good {
+  color: #22c55e;
+}
+
+.heap-average {
+  color: #f59e0b;
+}
+
+.heap-poor {
+  color: #ef4444;
+}
+
+.heap-chart {
+  display: block;
+  max-width: 100%;
+  background: #f8fafc;
+  border-radius: 0.5rem;
 }
 </style>

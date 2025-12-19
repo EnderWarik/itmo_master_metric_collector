@@ -32,6 +32,49 @@ export class E2EMetricCollector {
                 });
                 (window as any).__longTasksObserver.observe({ type: 'longtask', buffered: true });
 
+                // Heap Usage измерение
+                (window as any).__heapMeter = {
+                    running: false,
+                    timeline: [] as { time: number; usedSize: number; totalSize: number; usagePercent: number }[],
+                    startTime: 0,
+                    intervalId: null as any,
+                    start() {
+                        this.timeline = [];
+                        this.startTime = performance.now();
+                        this.running = true;
+                        this.measure();
+                        // Замер каждые 200мс
+                        this.intervalId = setInterval(() => this.measure(), 200);
+                    },
+                    measure() {
+                        if (!this.running) return;
+                        const memory = (performance as any).memory;
+                        if (memory) {
+                            const usedSize = memory.usedJSHeapSize;
+                            const totalSize = memory.totalJSHeapSize;
+                            this.timeline.push({
+                                time: Math.round(performance.now() - this.startTime),
+                                usedSize,
+                                totalSize,
+                                usagePercent: totalSize > 0 ? Math.round((usedSize / totalSize) * 100) : 0,
+                            });
+                        }
+                    },
+                    stop() {
+                        this.running = false;
+                        if (this.intervalId) clearInterval(this.intervalId);
+                        return {
+                            timeline: this.timeline,
+                            avgUsagePercent: this.timeline.length > 0
+                                ? Math.round(this.timeline.reduce((sum, t) => sum + t.usagePercent, 0) / this.timeline.length)
+                                : 0,
+                            maxUsagePercent: this.timeline.length > 0
+                                ? Math.max(...this.timeline.map(t => t.usagePercent))
+                                : 0,
+                        };
+                    },
+                };
+
                 // FPS измерение
                 (window as any).__fpsMeter = {
                     frames: 0,
@@ -80,9 +123,10 @@ export class E2EMetricCollector {
             // Дополнительно ждём 500мс для стабилизации страницы
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Запускаем FPS meter
+            // Запускаем FPS и Heap meters
             await page.evaluate(() => {
                 (window as any).__fpsMeter?.start();
+                (window as any).__heapMeter?.start();
             });
 
             // Запоминаем время начала сценария (после загрузки страницы)
@@ -105,6 +149,11 @@ export class E2EMetricCollector {
             // Останавливаем FPS meter и получаем результаты
             const fpsResult = await page.evaluate(() => {
                 return (window as any).__fpsMeter?.stop() || { avgFps: 0, minFps: 0, totalFrames: 0, durationMs: 0, frameTimes: [] };
+            });
+
+            // Останавливаем Heap meter и получаем результаты
+            const heapResult = await page.evaluate(() => {
+                return (window as any).__heapMeter?.stop() || { timeline: [], avgUsagePercent: 0, maxUsagePercent: 0 };
             });
 
             // Создаём fpsTimeline из frameTimes (группируем по 500мс интервалам)
@@ -175,6 +224,9 @@ export class E2EMetricCollector {
                 totalFrames: fpsResult.totalFrames,
                 droppedFrames,
                 fpsTimeline,
+                avgHeapUsagePercent: heapResult.avgUsagePercent,
+                maxHeapUsagePercent: heapResult.maxUsagePercent,
+                heapTimeline: heapResult.timeline,
                 success: stepMetrics.every(s => s.success),
             };
         } catch (error) {

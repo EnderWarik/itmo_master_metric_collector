@@ -43,6 +43,8 @@ export interface ResourceTimingPayload {
     jsHeapUsedSize: number;
     /** Общий размер JS heap (bytes) */
     jsHeapTotalSize: number;
+    /** Процент использования heap */
+    heapUsagePercent: number;
     /** Количество layout операций */
     layoutCount: number;
     /** Время на layout (мс) */
@@ -55,6 +57,14 @@ export interface ResourceTimingPayload {
     domNodes: number;
     /** Количество event listeners */
     jsEventListeners: number;
+
+    // GC Metrics
+    /** Количество сборок мусора */
+    gcCount: number;
+    /** Суммарное время GC (мс) */
+    gcTotalDurationMs: number;
+    /** Максимальная длительность одной GC (мс) */
+    gcMaxDurationMs: number;
 
     error?: string;
 }
@@ -93,11 +103,34 @@ export class ResourceTimingCollector
             const client = await page.target().createCDPSession();
             await client.send('Performance.enable');
 
+            // Собираем GC события через Tracing
+            const gcEvents: { name: string; dur: number }[] = [];
+            client.on('Tracing.dataCollected', (data) => {
+                for (const event of data.value || []) {
+                    if (event.cat?.includes('v8.gc') || event.name?.includes('GC')) {
+                        gcEvents.push({
+                            name: event.name,
+                            dur: event.dur ? event.dur / 1000 : 0, // микросекунды → мс
+                        });
+                    }
+                }
+            });
+
+            await client.send('Tracing.start', {
+                categories: 'v8,v8.gc,disabled-by-default-v8.gc',
+                transferMode: 'ReportEvents',
+            });
+
             // Переходим на страницу
             await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
 
             // Ждём дополнительно для полной загрузки
             await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Останавливаем tracing
+            await client.send('Tracing.end');
+            // Ждём завершения сбора данных
+            await new Promise(resolve => setTimeout(resolve, 200));
 
             // Получаем Performance metrics через CDP
             const metrics = await client.send('Performance.getMetrics');
@@ -166,6 +199,18 @@ export class ResourceTimingCollector
             const scriptsTotalSize = scriptEntries.reduce((sum, e) => sum + e.transferSize, 0);
             const totalTransferSize = resourceEntries.reduce((sum, e) => sum + e.transferSize, 0);
 
+            // Расчёт heap usage %
+            const heapUsagePercent = jsHeapTotalSize > 0
+                ? Math.round((jsHeapUsedSize / jsHeapTotalSize) * 100)
+                : 0;
+
+            // GC метрики
+            const gcCount = gcEvents.length;
+            const gcTotalDurationMs = Math.round(gcEvents.reduce((sum, e) => sum + e.dur, 0));
+            const gcMaxDurationMs = gcEvents.length > 0
+                ? Math.round(Math.max(...gcEvents.map(e => e.dur)))
+                : 0;
+
             await browser.close();
             browser = null;
 
@@ -190,12 +235,17 @@ export class ResourceTimingCollector
                     taskDurationMs,
                     jsHeapUsedSize,
                     jsHeapTotalSize,
+                    heapUsagePercent,
                     layoutCount,
                     layoutDurationMs,
                     recalcStyleCount,
                     recalcStyleDurationMs,
                     domNodes,
                     jsEventListeners,
+                    // GC Metrics
+                    gcCount,
+                    gcTotalDurationMs,
+                    gcMaxDurationMs,
                 },
             };
         } catch (error) {
@@ -220,12 +270,16 @@ export class ResourceTimingCollector
                     taskDurationMs: 0,
                     jsHeapUsedSize: 0,
                     jsHeapTotalSize: 0,
+                    heapUsagePercent: 0,
                     layoutCount: 0,
                     layoutDurationMs: 0,
                     recalcStyleCount: 0,
                     recalcStyleDurationMs: 0,
                     domNodes: 0,
                     jsEventListeners: 0,
+                    gcCount: 0,
+                    gcTotalDurationMs: 0,
+                    gcMaxDurationMs: 0,
                     error: (error as Error).message,
                 },
             };

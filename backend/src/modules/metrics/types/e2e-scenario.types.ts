@@ -77,6 +77,12 @@ export interface E2EMetricsPayload {
     droppedFrames?: number;
     /** FPS по временным интервалам (для графика) */
     fpsTimeline?: { timeMs: number; fps: number }[];
+    /** Средний % использования heap */
+    avgHeapUsagePercent?: number;
+    /** Максимальный % использования heap */
+    maxHeapUsagePercent?: number;
+    /** Heap usage по временным интервалам (для графика) */
+    heapTimeline?: { time: number; usedSize: number; totalSize: number; usagePercent: number }[];
     /** Все шаги успешны */
     success: boolean;
     /** Ошибка (если сценарий упал) */

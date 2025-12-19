@@ -65,12 +65,17 @@ interface ResourceTimingPayload {
   taskDurationMs: number;
   jsHeapUsedSize: number;
   jsHeapTotalSize: number;
+  heapUsagePercent: number;
   layoutCount: number;
   layoutDurationMs: number;
   recalcStyleCount: number;
   recalcStyleDurationMs: number;
   domNodes: number;
   jsEventListeners: number;
+  // GC Metrics
+  gcCount: number;
+  gcTotalDurationMs: number;
+  gcMaxDurationMs: number;
   error?: string;
 }
 
@@ -179,6 +184,12 @@ function formatBytes(bytes: number): string {
   if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return bytes + ' B';
+}
+
+function getHeapClass(percent: number): string {
+  if (percent <= 50) return 'heap--good';
+  if (percent <= 80) return 'heap--average';
+  return 'heap--poor';
 }
 </script>
 
@@ -457,6 +468,31 @@ function formatBytes(bytes: number): string {
                   <div class="dom-metric">
                     <span class="dom-metric__label">Event Listeners</span>
                     <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.jsEventListeners }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- GC Metrics -->
+              <div v-if="getResourceTimingPayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">🗑️ Garbage Collection</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Heap Usage</span>
+                    <span class="dom-metric__value" :class="getHeapClass(getResourceTimingPayload(result)!.heapUsagePercent)">
+                      {{ getResourceTimingPayload(result)!.heapUsagePercent }}%
+                    </span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">GC Count</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.gcCount }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">GC Total</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.gcTotalDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">GC Max</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.gcMaxDurationMs }} мс</span>
                   </div>
                 </div>
               </div>
@@ -770,6 +806,19 @@ function formatBytes(bytes: number): string {
 }
 
 .score--poor {
+  color: #ef4444;
+}
+
+/* Heap Usage */
+.heap--good {
+  color: #22c55e;
+}
+
+.heap--average {
+  color: #f59e0b;
+}
+
+.heap--poor {
   color: #ef4444;
 }
 

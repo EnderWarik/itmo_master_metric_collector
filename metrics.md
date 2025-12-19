@@ -185,6 +185,30 @@ const metrics = await client.send('Performance.getMetrics');
 
 ---
 
+### Garbage Collection (GC) Metrics
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `heapUsagePercent` | % использования heap | `jsHeapUsedSize / jsHeapTotalSize × 100` |
+| `gcCount` | Количество сборок мусора | Подсчёт GC событий в trace |
+| `gcTotalDurationMs` | Суммарное время GC | Сумма `dur` всех GC событий |
+| `gcMaxDurationMs` | Макс. длительность одной GC | `Math.max(...gcEvents.dur)` |
+
+**Как собираем GC метрики:**
+```typescript
+await client.send('Tracing.start', {
+    categories: 'v8,v8.gc,disabled-by-default-v8.gc',
+    transferMode: 'ReportEvents',
+});
+// ... page.goto() ...
+await client.send('Tracing.end');
+// Фильтруем события с cat === 'v8.gc' или name.includes('GC')
+```
+
+**Время измерения:** От `page.goto()` до `networkidle0` + 1 секунда.
+
+---
+
 ## 8. E2E Metrics (Сценарии взаимодействия)
 
 **Инструмент:** Puppeteer + PerformanceObserver + requestAnimationFrame
@@ -273,6 +297,34 @@ for (const frameTime of frameTimes) {
 | `maxInputDelayMs` | Максимальное Input Delay | `Math.max(...inputDelayMs)` |
 | `totalLongTasks` | Всего Long Tasks | Сумма по всем шагам |
 | `totalLongTasksMs` | Общее время Long Tasks | Сумма по всем шагам |
+
+---
+
+### Heap Usage Timeline
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `avgHeapUsagePercent` | Средний % использования heap | `avg(usedSize / totalSize × 100)` |
+| `maxHeapUsagePercent` | Макс. % использования heap | `max(usedSize / totalSize × 100)` |
+| `heapTimeline` | Массив точек heap по времени | `{ time, usedSize, totalSize, usagePercent }[]` |
+
+**Как измеряем heap:**
+```typescript
+// В браузере через page.evaluateOnNewDocument
+const memory = performance.memory;  // Только Chrome!
+const usedSize = memory.usedJSHeapSize;
+const totalSize = memory.totalJSHeapSize;
+const usagePercent = (usedSize / totalSize) * 100;
+
+// Замер каждые 200мс во время сценария
+setInterval(() => {
+  heapTimeline.push({ time, usedSize, totalSize, usagePercent });
+}, 200);
+```
+
+**Порог:** `heapUsagePercent > 80%` — предупреждение (память на пределе).
+
+> ⚠️ **Примечание:** `performance.memory` доступен только в Chrome.
 
 ---
 

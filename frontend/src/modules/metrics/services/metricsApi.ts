@@ -29,6 +29,9 @@ export interface E2EResult {
   totalFrames?: number;
   droppedFrames?: number;
   fpsTimeline?: { timeMs: number; fps: number }[];
+  avgHeapUsagePercent?: number;
+  maxHeapUsagePercent?: number;
+  heapTimeline?: { time: number; usedSize: number; totalSize: number; usagePercent: number }[];
   success: boolean;
   error?: string;
 }

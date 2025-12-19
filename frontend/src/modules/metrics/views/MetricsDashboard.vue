@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import AppShell from '@/modules/layout/components/AppShell.vue';
 import CardSurface from '@/shared/ui/CardSurface.vue';
 import MetricForm from '../components/MetricForm.vue';
 import MetricResultsPanel from '../components/MetricResultsPanel.vue';
+import ScenarioRecorder from '../components/ScenarioRecorder.vue';
+import E2EResultsPanel from '../components/E2EResultsPanel.vue';
 import { useMetricRunner } from '../composables/useMetricRunner';
+import { metricsApi, type Scenario, type E2EResult } from '../services/metricsApi';
 
 const {
   definitions,
@@ -13,11 +17,62 @@ const {
   errorMessage,
   collectAll,
 } = useMetricRunner();
+
+// Tab state
+type TabType = 'metrics' | 'e2e';
+const activeTab = ref<TabType>('metrics');
+
+// E2E state
+const e2eResult = ref<E2EResult | null>(null);
+const isE2ERunning = ref(false);
+
+async function runE2EScenario(scenario: Scenario) {
+  isE2ERunning.value = true;
+  e2eResult.value = null;
+
+  try {
+    e2eResult.value = await metricsApi.runE2EScenario(scenario);
+  } catch (err) {
+    e2eResult.value = {
+      scenarioName: scenario.name,
+      url: scenario.url,
+      steps: [],
+      totalDurationMs: 0,
+      totalLongTasks: 0,
+      totalLongTasksMs: 0,
+      avgInputDelayMs: 0,
+      maxInputDelayMs: 0,
+      success: false,
+      error: (err as Error).message,
+    };
+  } finally {
+    isE2ERunning.value = false;
+  }
+}
 </script>
 
 <template>
   <AppShell>
-    <div class="grid">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button 
+        class="tab" 
+        :class="{ 'tab--active': activeTab === 'metrics' }" 
+        @click="activeTab = 'metrics'"
+      >
+        📊 Метрики
+      </button>
+      <button 
+        class="tab" 
+        :class="{ 'tab--active': activeTab === 'e2e' }" 
+        @click="activeTab = 'e2e'"
+      >
+        🎬 E2E Сценарии
+      </button>
+    </div>
+
+    <!-- Metrics Tab -->
+    <div v-if="activeTab === 'metrics'" class="grid">
       <CardSurface class="sticky-card">
         <template #header>
           <div class="card-header">
@@ -39,10 +94,43 @@ const {
         :is-collecting="isCollecting"
       />
     </div>
+
+    <!-- E2E Tab -->
+    <div v-else class="grid">
+      <ScenarioRecorder @run-scenario="runE2EScenario" />
+      <E2EResultsPanel :result="e2eResult" :is-running="isE2ERunning" />
+    </div>
   </AppShell>
 </template>
 
 <style scoped>
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: #e2e8f0;
+}
+
+.tab--active {
+  background: #4f46e5;
+  color: white;
+}
+
 .grid {
   display: flex;
   flex-direction: column;
@@ -84,4 +172,3 @@ const {
   color: #111827;
 }
 </style>
-

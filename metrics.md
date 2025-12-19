@@ -9,6 +9,7 @@
 | `DomMetricCollector` | Browser | Puppeteer | Navigation Timing API |
 | `LighthouseMetricCollector` | Browser | Lighthouse | Web Vitals метрики |
 | `FpsMetricCollector` | Browser | Puppeteer | FPS в покое (3 сек) |
+| `ResourceTimingCollector` | Browser | Puppeteer + CDP | Resource Timing + V8 метрики |
 | `E2EMetricCollector` | E2E | Puppeteer | Метрики взаимодействия + FPS |
 
 ---
@@ -136,7 +137,55 @@
 
 ---
 
-## 6. E2E Metrics (Сценарии взаимодействия)
+## 7. Resource Timing (`page.resources`)
+
+**Инструмент:** Puppeteer + Chrome DevTools Protocol (CDP)
+
+**Что измеряет:** Загрузку ресурсов и производительность V8 после полной загрузки страницы.
+
+### Resource Timing API
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `totalResources` | Общее кол-во ресурсов | `performance.getEntriesByType('resource').length` |
+| `totalTransferSize` | Общий размер данных | Сумма `transferSize` всех ресурсов (bytes) |
+| `apiRequests` | Кол-во API запросов | Фильтр: `initiatorType === 'fetch' \| 'xmlhttprequest'` |
+| `totalApiDurationMs` | Общее время API | Сумма `duration` всех API запросов |
+| `avgApiDurationMs` | Среднее время API | `totalApiDurationMs / apiRequests` |
+| `maxApiDurationMs` | Макс. время API | `Math.max(...durations)` |
+| `scriptsCount` | Кол-во скриптов | Фильтр: `initiatorType === 'script'` |
+| `scriptsTotalSize` | Размер скриптов | Сумма `transferSize` скриптов (bytes) |
+
+**duration** = `entry.responseEnd - entry.startTime` (полное время загрузки ресурса)
+
+---
+
+### CDP Performance Metrics (V8)
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `scriptDurationMs` | Время выполнения JS | `ScriptDuration × 1000` |
+| `taskDurationMs` | Время задач main thread | `TaskDuration × 1000` |
+| `jsHeapUsedSize` | Использованная память | `JSHeapUsedSize` (bytes) |
+| `jsHeapTotalSize` | Общий размер heap | `JSHeapTotalSize` (bytes) |
+| `layoutCount` | Кол-во layout операций | `LayoutCount` |
+| `layoutDurationMs` | Время на layout | `LayoutDuration × 1000` |
+| `recalcStyleCount` | Кол-во пересчётов стилей | `RecalcStyleCount` |
+| `recalcStyleDurationMs` | Время на стили | `RecalcStyleDuration × 1000` |
+| `domNodes` | Кол-во DOM nodes | `Nodes` |
+| `jsEventListeners` | Кол-во event listeners | `JSEventListeners` |
+
+**Как получаем CDP метрики:**
+```typescript
+const client = await page.target().createCDPSession();
+await client.send('Performance.enable');
+const metrics = await client.send('Performance.getMetrics');
+// metrics.metrics = [{ name: 'ScriptDuration', value: 0.009 }, ...]
+```
+
+---
+
+## 8. E2E Metrics (Сценарии взаимодействия)
 
 **Инструмент:** Puppeteer + PerformanceObserver + requestAnimationFrame
 

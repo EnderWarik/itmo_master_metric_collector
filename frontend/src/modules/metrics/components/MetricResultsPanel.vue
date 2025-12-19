@@ -50,6 +50,30 @@ interface FpsPayload {
   error?: string;
 }
 
+interface ResourceTimingPayload {
+  totalResources: number;
+  totalTransferSize: number;
+  apiRequests: number;
+  totalApiDurationMs: number;
+  avgApiDurationMs: number;
+  maxApiDurationMs: number;
+  apiDetails: { url: string; duration: number; size: number }[];
+  scriptDurationMs: number;
+  scriptsCount: number;
+  scriptsTotalSize: number;
+  // CDP Performance Metrics
+  taskDurationMs: number;
+  jsHeapUsedSize: number;
+  jsHeapTotalSize: number;
+  layoutCount: number;
+  layoutDurationMs: number;
+  recalcStyleCount: number;
+  recalcStyleDurationMs: number;
+  domNodes: number;
+  jsEventListeners: number;
+  error?: string;
+}
+
 const props = defineProps<{
   results: MetricResult[];
   errorMessage: string | null;
@@ -144,6 +168,17 @@ function getFpsClass(fps: number): string {
   if (fps >= 55) return 'fps--good';
   if (fps >= 30) return 'fps--average';
   return 'fps--poor';
+}
+
+function getResourceTimingPayload(result: MetricResult): ResourceTimingPayload | null {
+  if (result.key !== 'page.resources') return null;
+  return result.payload as ResourceTimingPayload;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return bytes + ' B';
 }
 </script>
 
@@ -336,6 +371,92 @@ function getFpsClass(fps: number): string {
                   <div class="dom-metric dom-metric--cls">
                     <span class="dom-metric__label">CLS</span>
                     <span class="dom-metric__value">{{ getLighthousePayload(result)!.cls.toFixed(3) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resource Timing Breakdown -->
+              <div v-if="getResourceTimingPayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">📊 Resource Timing</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Ресурсов</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.totalResources }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Всего скачано</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.totalTransferSize) }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">API запросов</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.apiRequests }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Общее время API</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.totalApiDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Avg API</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.avgApiDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Max API</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.maxApiDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Script Duration</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.scriptDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Скриптов</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.scriptsCount }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Размер скриптов</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.scriptsTotalSize) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CDP Performance Metrics -->
+              <div v-if="getResourceTimingPayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">🧠 V8 Performance</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Task Duration</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.taskDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">JS Heap Used</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.jsHeapUsedSize) }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">JS Heap Total</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.jsHeapTotalSize) }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Layout Count</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.layoutCount }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Layout Duration</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.layoutDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Style Recalc</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.recalcStyleCount }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Style Duration</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.recalcStyleDurationMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">DOM Nodes</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.domNodes }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Event Listeners</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.jsEventListeners }}</span>
                   </div>
                 </div>
               </div>

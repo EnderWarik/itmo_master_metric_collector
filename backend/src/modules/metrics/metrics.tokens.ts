@@ -1,0 +1,2 @@
+export const METRIC_COLLECTORS = 'METRIC_COLLECTORS';
+

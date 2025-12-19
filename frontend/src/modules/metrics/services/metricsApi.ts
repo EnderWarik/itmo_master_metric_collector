@@ -19,10 +19,16 @@ export interface E2EResult {
   url: string;
   steps: any[];
   totalDurationMs: number;
+  scenarioDurationMs: number;
   totalLongTasks: number;
   totalLongTasksMs: number;
   avgInputDelayMs: number;
   maxInputDelayMs: number;
+  avgFps?: number;
+  minFps?: number;
+  totalFrames?: number;
+  droppedFrames?: number;
+  fpsTimeline?: { timeMs: number; fps: number }[];
   success: boolean;
   error?: string;
 }

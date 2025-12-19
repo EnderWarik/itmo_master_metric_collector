@@ -39,6 +39,17 @@ interface LighthousePayload {
   error?: string;
 }
 
+interface FpsPayload {
+  avgFps: number;
+  minFps: number;
+  maxFps: number;
+  totalFrames: number;
+  durationMs: number;
+  droppedFrames: number;
+  droppedFramesPercent: number;
+  error?: string;
+}
+
 const props = defineProps<{
   results: MetricResult[];
   errorMessage: string | null;
@@ -90,6 +101,8 @@ function getMainValue(result: MetricResult): number | null {
   if (typeof payload.totalMs === 'number') return payload.totalMs;
   // For Lighthouse, use speedIndexMs as main value
   if (typeof payload.speedIndexMs === 'number') return payload.speedIndexMs;
+  // For FPS, use avgFps as main value (not in ms, so return null to show custom display)
+  if (typeof payload.avgFps === 'number') return null;
   return null;
 }
 
@@ -120,6 +133,17 @@ function getScoreClass(score: number): string {
   if (score >= 90) return 'score--good';
   if (score >= 50) return 'score--average';
   return 'score--poor';
+}
+
+function getFpsPayload(result: MetricResult): FpsPayload | null {
+  if (result.key !== 'page.fps') return null;
+  return result.payload as FpsPayload;
+}
+
+function getFpsClass(fps: number): string {
+  if (fps >= 55) return 'fps--good';
+  if (fps >= 30) return 'fps--average';
+  return 'fps--poor';
 }
 </script>
 
@@ -158,7 +182,13 @@ function getScoreClass(score: number): string {
                   <p v-if="result.description" class="result__description">{{ result.description }}</p>
                 </div>
                 <div class="result__value">
-                  <template v-if="getMainValue(result) !== null">
+                  <template v-if="getFpsPayload(result)">
+                    <span class="value__number" :class="getFpsClass(getFpsPayload(result)!.avgFps)">
+                      {{ getFpsPayload(result)!.avgFps }}
+                    </span>
+                    <span class="value__unit">FPS</span>
+                  </template>
+                  <template v-else-if="getMainValue(result) !== null">
                     <span class="value__number">{{ formatMs(getMainValue(result)!) }}</span>
                     <span class="value__unit">сек</span>
                   </template>
@@ -646,5 +676,47 @@ function getScoreClass(score: number): string {
   margin: 0.5rem 0 0;
   overflow: auto;
   font-size: 0.85rem;
+}
+
+/* FPS Metrics */
+.fps-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.fps-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+.fps-metric__value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.fps-metric__label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.fps--good {
+  color: #22c55e !important;
+}
+
+.fps--average {
+  color: #f59e0b !important;
+}
+
+.fps--poor {
+  color: #ef4444 !important;
 }
 </style>

@@ -24,18 +24,69 @@ export class E2EMetricCollector {
             // Устанавливаем viewport
             await page.setViewport({ width: 1920, height: 1080 });
 
-            // Инжектим Long Tasks observer
+            // Инжектим Long Tasks observer и FPS meter
             await page.evaluateOnNewDocument(() => {
                 (window as any).__longTasks = [];
                 (window as any).__longTasksObserver = new PerformanceObserver((list) => {
                     (window as any).__longTasks.push(...list.getEntries());
                 });
                 (window as any).__longTasksObserver.observe({ type: 'longtask', buffered: true });
+
+                // FPS измерение
+                (window as any).__fpsMeter = {
+                    frames: 0,
+                    startTime: 0,
+                    frameTimes: [] as number[],
+                    lastFrameTime: 0,
+                    running: false,
+                    start() {
+                        this.frames = 0;
+                        this.startTime = performance.now();
+                        this.lastFrameTime = this.startTime;
+                        this.frameTimes = [];
+                        this.running = true;
+                        this.measure();
+                    },
+                    measure() {
+                        if (!this.running) return;
+                        const now = performance.now();
+                        const delta = now - this.lastFrameTime;
+                        if (delta > 0) {
+                            this.frameTimes.push(delta);
+                        }
+                        this.frames++;
+                        this.lastFrameTime = now;
+                        requestAnimationFrame(() => this.measure());
+                    },
+                    stop() {
+                        this.running = false;
+                        const duration = performance.now() - this.startTime;
+                        const fpsValues = this.frameTimes.filter((t: number) => t > 0).map((t: number) => 1000 / t);
+                        return {
+                            avgFps: fpsValues.length > 0 ? Math.round(fpsValues.reduce((a: number, b: number) => a + b, 0) / fpsValues.length) : 0,
+                            minFps: fpsValues.length > 0 ? Math.round(Math.min(...fpsValues)) : 0,
+                            totalFrames: this.frames,
+                            durationMs: Math.round(duration),
+                            frameTimes: this.frameTimes.slice(), // Return copy of frameTimes for timeline
+                        };
+                    }
+                };
             });
 
-            // Переходим на страницу
+            // Переходим на страницу и ждём полной загрузки (networkidle0)
             this.logger.log(`Navigating to ${scenario.url}`);
-            await page.goto(scenario.url, { waitUntil: 'load', timeout: 30000 });
+            await page.goto(scenario.url, { waitUntil: 'networkidle0', timeout: 60000 });
+
+            // Дополнительно ждём 500мс для стабилизации страницы
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Запускаем FPS meter
+            await page.evaluate(() => {
+                (window as any).__fpsMeter?.start();
+            });
+
+            // Запоминаем время начала сценария (после загрузки страницы)
+            const scenarioStartTime = Date.now();
 
             // Выполняем каждый шаг
             for (let i = 0; i < scenario.steps.length; i++) {
@@ -45,6 +96,39 @@ export class E2EMetricCollector {
 
                 if (!stepResult.success) {
                     this.logger.warn(`Step ${i} failed: ${stepResult.error}`);
+                }
+            }
+
+            // Время выполнения сценария (без загрузки страницы)
+            const scenarioDurationMs = Date.now() - scenarioStartTime;
+
+            // Останавливаем FPS meter и получаем результаты
+            const fpsResult = await page.evaluate(() => {
+                return (window as any).__fpsMeter?.stop() || { avgFps: 0, minFps: 0, totalFrames: 0, durationMs: 0, frameTimes: [] };
+            });
+
+            // Создаём fpsTimeline из frameTimes (группируем по 500мс интервалам)
+            const fpsTimeline: { timeMs: number; fps: number }[] = [];
+            if (fpsResult.frameTimes && fpsResult.frameTimes.length > 0) {
+                const intervalMs = 500; // 500мс интервалы
+                let currentTime = 0;
+                let intervalFrames = 0;
+                let intervalStart = 0;
+
+                for (const frameTime of fpsResult.frameTimes as number[]) {
+                    currentTime += frameTime;
+                    intervalFrames++;
+
+                    if (currentTime - intervalStart >= intervalMs) {
+                        const intervalDuration = currentTime - intervalStart;
+                        const fps = Math.round((intervalFrames / intervalDuration) * 1000);
+                        fpsTimeline.push({
+                            timeMs: Math.round(currentTime),
+                            fps: Math.min(fps, 120), // Cap at 120 FPS
+                        });
+                        intervalStart = currentTime;
+                        intervalFrames = 0;
+                    }
                 }
             }
 
@@ -64,15 +148,33 @@ export class E2EMetricCollector {
                 ? Math.max(...inputDelays)
                 : 0;
 
+            // Вычисляем dropped frames (ожидаем 60 FPS)
+            const expectedFrames = Math.round((fpsResult.durationMs / 1000) * 60);
+            const droppedFrames = Math.max(0, expectedFrames - fpsResult.totalFrames);
+
+            // Вычисляем avgFps и minFps из fpsTimeline (более стабильные значения)
+            const avgFps = fpsTimeline.length > 0
+                ? Math.round(fpsTimeline.reduce((sum, p) => sum + p.fps, 0) / fpsTimeline.length)
+                : 0;
+            const minFps = fpsTimeline.length > 0
+                ? Math.min(...fpsTimeline.map(p => p.fps))
+                : 0;
+
             return {
                 scenarioName: scenario.name,
                 url: scenario.url,
                 steps: stepMetrics,
                 totalDurationMs,
+                scenarioDurationMs,
                 totalLongTasks,
                 totalLongTasksMs,
                 avgInputDelayMs,
                 maxInputDelayMs,
+                avgFps,
+                minFps,
+                totalFrames: fpsResult.totalFrames,
+                droppedFrames,
+                fpsTimeline,
                 success: stepMetrics.every(s => s.success),
             };
         } catch (error) {
@@ -83,10 +185,15 @@ export class E2EMetricCollector {
                 url: scenario.url,
                 steps: stepMetrics,
                 totalDurationMs: Date.now() - startTime,
+                scenarioDurationMs: 0,
                 totalLongTasks: 0,
                 totalLongTasksMs: 0,
                 avgInputDelayMs: 0,
                 maxInputDelayMs: 0,
+                avgFps: 0,
+                minFps: 0,
+                totalFrames: 0,
+                droppedFrames: 0,
                 success: false,
                 error: (error as Error).message,
             };
@@ -114,11 +221,13 @@ export class E2EMetricCollector {
             });
 
             const actionStart = Date.now();
+            const isFirstStep = stepIndex === 0;
 
             switch (step.action) {
                 case 'click':
                     if (!step.selector) throw new Error('Selector required for click');
-                    await page.waitForSelector(step.selector, { timeout: 10000 });
+                    // Первый шаг ждёт visible:true, остальные — просто наличие элемента
+                    await page.waitForSelector(step.selector, { timeout: 10000, visible: isFirstStep });
                     inputDelayMs = Date.now() - actionStart;
                     await page.click(step.selector);
                     break;
@@ -126,7 +235,8 @@ export class E2EMetricCollector {
                 case 'type':
                     if (!step.selector) throw new Error('Selector required for type');
                     if (!step.value) throw new Error('Value required for type');
-                    await page.waitForSelector(step.selector, { timeout: 10000 });
+                    // Первый шаг ждёт visible:true, остальные — просто наличие элемента
+                    await page.waitForSelector(step.selector, { timeout: 10000, visible: isFirstStep });
                     inputDelayMs = Date.now() - actionStart;
                     await page.type(step.selector, String(step.value), { delay: 50 });
                     break;

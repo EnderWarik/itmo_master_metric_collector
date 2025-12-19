@@ -7,6 +7,7 @@ import { PingMetricCollector } from './collectors/ping-metric.collector';
 import { TtfbMetricCollector } from './collectors/ttfb-metric.collector';
 import { DomMetricCollector } from './collectors/dom-metric.collector';
 import { LighthouseMetricCollector } from './collectors/lighthouse-metric.collector';
+import { FpsMetricCollector } from './collectors/fps-metric.collector';
 import { E2EMetricCollector } from './collectors/e2e-metric.collector';
 
 @Module({
@@ -18,6 +19,7 @@ import { E2EMetricCollector } from './collectors/e2e-metric.collector';
     TtfbMetricCollector,
     DomMetricCollector,
     LighthouseMetricCollector,
+    FpsMetricCollector,
     E2EMetricCollector,
     {
       provide: METRIC_COLLECTORS,
@@ -26,8 +28,9 @@ import { E2EMetricCollector } from './collectors/e2e-metric.collector';
         ttfbCollector: TtfbMetricCollector,
         domCollector: DomMetricCollector,
         lighthouseCollector: LighthouseMetricCollector,
-      ) => [pingCollector, ttfbCollector, domCollector, lighthouseCollector],
-      inject: [PingMetricCollector, TtfbMetricCollector, DomMetricCollector, LighthouseMetricCollector],
+        fpsCollector: FpsMetricCollector,
+      ) => [pingCollector, ttfbCollector, domCollector, lighthouseCollector, fpsCollector],
+      inject: [PingMetricCollector, TtfbMetricCollector, DomMetricCollector, LighthouseMetricCollector, FpsMetricCollector],
     },
   ],
   exports: [MetricsService, E2EMetricCollector],

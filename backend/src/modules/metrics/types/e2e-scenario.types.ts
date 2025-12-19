@@ -55,8 +55,10 @@ export interface E2EMetricsPayload {
     url: string;
     /** Метрики по каждому шагу */
     steps: StepMetrics[];
-    /** Общее время выполнения сценария (мс) */
+    /** Общее время (включая загрузку страницы) */
     totalDurationMs: number;
+    /** Время выполнения сценария (без загрузки страницы) */
+    scenarioDurationMs: number;
     /** Общее количество Long Tasks */
     totalLongTasks: number;
     /** Суммарное время Long Tasks (мс) */
@@ -65,8 +67,19 @@ export interface E2EMetricsPayload {
     avgInputDelayMs: number;
     /** Максимальное Input Delay (мс) */
     maxInputDelayMs: number;
+    /** Средний FPS во время выполнения сценария */
+    avgFps?: number;
+    /** Минимальный FPS */
+    minFps?: number;
+    /** Количество кадров */
+    totalFrames?: number;
+    /** Пропущенные кадры */
+    droppedFrames?: number;
+    /** FPS по временным интервалам (для графика) */
+    fpsTimeline?: { timeMs: number; fps: number }[];
     /** Все шаги успешны */
     success: boolean;
     /** Ошибка (если сценарий упал) */
     error?: string;
 }
+

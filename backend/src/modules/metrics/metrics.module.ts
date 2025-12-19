@@ -6,6 +6,7 @@ import { METRIC_COLLECTORS } from './metrics.tokens';
 import { PingMetricCollector } from './collectors/ping-metric.collector';
 import { TtfbMetricCollector } from './collectors/ttfb-metric.collector';
 import { DomMetricCollector } from './collectors/dom-metric.collector';
+import { LighthouseMetricCollector } from './collectors/lighthouse-metric.collector';
 
 @Module({
   controllers: [MetricsController],
@@ -15,14 +16,16 @@ import { DomMetricCollector } from './collectors/dom-metric.collector';
     PingMetricCollector,
     TtfbMetricCollector,
     DomMetricCollector,
+    LighthouseMetricCollector,
     {
       provide: METRIC_COLLECTORS,
       useFactory: (
         pingCollector: PingMetricCollector,
         ttfbCollector: TtfbMetricCollector,
         domCollector: DomMetricCollector,
-      ) => [pingCollector, ttfbCollector, domCollector],
-      inject: [PingMetricCollector, TtfbMetricCollector, DomMetricCollector],
+        lighthouseCollector: LighthouseMetricCollector,
+      ) => [pingCollector, ttfbCollector, domCollector, lighthouseCollector],
+      inject: [PingMetricCollector, TtfbMetricCollector, DomMetricCollector, LighthouseMetricCollector],
     },
   ],
   exports: [MetricsService],

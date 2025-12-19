@@ -11,10 +11,32 @@ interface TtfbTiming {
 }
 
 interface DomTiming {
+  redirectMs: number;
+  redirectHidden: boolean;
+  dnsMs: number;
+  dnsCached: boolean;
+  connectMs: number;
+  connectionReused: boolean;
+  sslMs: number | null;
+  requestMs: number;
+  responseMs: number;
+  domParseMs: number;
+  executeScriptsMs: number;
+  subResourcesMs: number;
   domContentLoadedMs: number;
   loadEventMs: number;
-  firstPaintMs: number | null;
-  firstContentfulPaintMs: number | null;
+}
+
+interface LighthousePayload {
+  speedIndexMs: number;
+  speedIndexScore: number;
+  fcpMs: number;
+  lcpMs: number;
+  ttiMs: number;
+  tbtMs: number;
+  cls: number;
+  performanceScore: number;
+  error?: string;
 }
 
 const props = defineProps<{
@@ -55,7 +77,8 @@ function formatMs(ms: number): string {
   return seconds.toFixed(3);
 }
 
-function formatMsShort(ms: number): string {
+function formatMsShort(ms: number | null | undefined): string {
+  if (ms == null) return '—';
   return ms.toFixed(0);
 }
 
@@ -63,11 +86,10 @@ function getMainValue(result: MetricResult): number | null {
   const payload = result.payload as Record<string, unknown>;
   if (typeof payload.elapsedMs === 'number') return payload.elapsedMs;
   if (typeof payload.ttfbMs === 'number') return payload.ttfbMs;
-  // For DOM metrics, use domContentLoadedMs as main value
-  const timing = payload.timing as DomTiming | undefined;
-  if (timing && typeof timing.domContentLoadedMs === 'number') {
-    return timing.domContentLoadedMs;
-  }
+  // For DOM metrics, use totalMs as main value
+  if (typeof payload.totalMs === 'number') return payload.totalMs;
+  // For Lighthouse, use speedIndexMs as main value
+  if (typeof payload.speedIndexMs === 'number') return payload.speedIndexMs;
   return null;
 }
 
@@ -87,6 +109,17 @@ function getDomTiming(result: MetricResult): DomTiming | null {
     return payload.timing as DomTiming;
   }
   return null;
+}
+
+function getLighthousePayload(result: MetricResult): LighthousePayload | null {
+  if (result.key !== 'page.lighthouse') return null;
+  return result.payload as LighthousePayload;
+}
+
+function getScoreClass(score: number): string {
+  if (score >= 90) return 'score--good';
+  if (score >= 50) return 'score--average';
+  return 'score--poor';
 }
 </script>
 
@@ -108,7 +141,7 @@ function getDomTiming(result: MetricResult): DomTiming | null {
       {{ errorMessage }}
     </div>
 
-    <template v-else-if="results.length">
+    <template v-else-if="props.results.length">
       <div
         v-for="(groupResults, groupKey) in groupedResults"
         :key="groupKey"
@@ -176,22 +209,103 @@ function getDomTiming(result: MetricResult): DomTiming | null {
 
               <!-- DOM Timing Breakdown -->
               <div v-if="getDomTiming(result)" class="timing-breakdown">
+                <p class="timing-section-title">⏱️ Фазы загрузки</p>
                 <div class="dom-metrics">
-                  <div class="dom-metric">
+                  <div class="dom-metric dom-metric--redirect">
+                    <span class="dom-metric__label">Redirect</span>
+                    <span class="dom-metric__value">
+                      {{ formatMsShort(getDomTiming(result)!.redirectMs) }} мс
+                      <span v-if="getDomTiming(result)!.redirectHidden" class="badge badge--hidden">hidden</span>
+                    </span>
+                  </div>
+                  <div class="dom-metric dom-metric--dns">
+                    <span class="dom-metric__label">DNS</span>
+                    <span class="dom-metric__value">
+                      {{ formatMsShort(getDomTiming(result)!.dnsMs) }} мс
+                      <span v-if="getDomTiming(result)!.dnsCached" class="badge badge--cached">cached</span>
+                    </span>
+                  </div>
+                  <div class="dom-metric dom-metric--connect">
+                    <span class="dom-metric__label">Connect</span>
+                    <span class="dom-metric__value">
+                      {{ formatMsShort(getDomTiming(result)!.connectMs) }} мс
+                      <span v-if="getDomTiming(result)!.connectionReused" class="badge badge--reused">reused</span>
+                    </span>
+                  </div>
+                  <div v-if="getDomTiming(result)!.sslMs !== null" class="dom-metric dom-metric--ssl">
+                    <span class="dom-metric__label">SSL/TLS</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.sslMs!) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--request">
+                    <span class="dom-metric__label">Request</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.requestMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--response">
+                    <span class="dom-metric__label">Response</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.responseMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--parse">
+                    <span class="dom-metric__label">DOM Parse</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.domParseMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--scripts">
+                    <span class="dom-metric__label">Scripts</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.executeScriptsMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--resources">
+                    <span class="dom-metric__label">Resources</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.subResourcesMs) }} мс</span>
+                  </div>
+                </div>
+                
+                <p class="timing-section-title">🎨 Ключевые моменты</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric dom-metric--dcl">
                     <span class="dom-metric__label">DOMContentLoaded</span>
                     <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.domContentLoadedMs) }} мс</span>
                   </div>
-                  <div class="dom-metric">
+                  <div class="dom-metric dom-metric--load">
                     <span class="dom-metric__label">Load</span>
                     <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.loadEventMs) }} мс</span>
                   </div>
-                  <div v-if="getDomTiming(result)!.firstPaintMs !== null" class="dom-metric">
-                    <span class="dom-metric__label">First Paint</span>
-                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.firstPaintMs!) }} мс</span>
+                </div>
+              </div>
+
+              <!-- Lighthouse Metrics -->
+              <div v-if="getLighthousePayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">🚀 Performance Score</p>
+                <div class="performance-score">
+                  <span class="score-value" :class="getScoreClass(getLighthousePayload(result)!.performanceScore)">
+                    {{ getLighthousePayload(result)!.performanceScore }}
+                  </span>
+                  <span class="score-label">/ 100</span>
+                </div>
+                
+                <p class="timing-section-title">⚡ Web Vitals</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric dom-metric--speed">
+                    <span class="dom-metric__label">Speed Index</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getLighthousePayload(result)!.speedIndexMs) }} мс</span>
                   </div>
-                  <div v-if="getDomTiming(result)!.firstContentfulPaintMs !== null" class="dom-metric">
+                  <div class="dom-metric dom-metric--lcp">
+                    <span class="dom-metric__label">LCP</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getLighthousePayload(result)!.lcpMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--fcp">
                     <span class="dom-metric__label">FCP</span>
-                    <span class="dom-metric__value">{{ formatMsShort(getDomTiming(result)!.firstContentfulPaintMs!) }} мс</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getLighthousePayload(result)!.fcpMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--tti">
+                    <span class="dom-metric__label">TTI</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getLighthousePayload(result)!.ttiMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--tbt">
+                    <span class="dom-metric__label">TBT</span>
+                    <span class="dom-metric__value">{{ formatMsShort(getLighthousePayload(result)!.tbtMs) }} мс</span>
+                  </div>
+                  <div class="dom-metric dom-metric--cls">
+                    <span class="dom-metric__label">CLS</span>
+                    <span class="dom-metric__value">{{ getLighthousePayload(result)!.cls.toFixed(3) }}</span>
                   </div>
                 </div>
               </div>
@@ -409,10 +523,21 @@ function getDomTiming(result: MetricResult): DomTiming | null {
 }
 
 /* DOM Metrics */
+.timing-section-title {
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.timing-section-title:first-child {
+  margin-top: 0;
+}
+
 .dom-metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.5rem;
 }
 
 .dom-metric {
@@ -436,6 +561,65 @@ function getDomTiming(result: MetricResult): DomTiming | null {
   font-weight: 600;
   color: #0f172a;
   font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.6rem;
+  font-weight: 500;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge--cached {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge--reused {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge--hidden {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* Performance Score */
+.performance-score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.score-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+.score--good {
+  color: #22c55e;
+}
+
+.score--average {
+  color: #f59e0b;
+}
+
+.score--poor {
+  color: #ef4444;
 }
 
 .details {

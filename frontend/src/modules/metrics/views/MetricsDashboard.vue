@@ -18,7 +18,7 @@ const {
 <template>
   <AppShell>
     <div class="grid">
-      <CardSurface>
+      <CardSurface class="sticky-card">
         <template #header>
           <div class="card-header">
             <p class="card-header__label">Сценарий</p>
@@ -52,10 +52,16 @@ const {
 @media (min-width: 960px) {
   .grid {
     flex-direction: row;
+    align-items: flex-start;
   }
 
   .grid > * {
     flex: 1;
+  }
+
+  .sticky-card {
+    position: sticky;
+    top: 1.5rem;
   }
 }
 

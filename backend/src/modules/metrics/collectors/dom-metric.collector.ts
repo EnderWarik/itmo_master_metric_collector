@@ -6,20 +6,41 @@ import {
     MetricResult,
 } from './metric-collector.interface';
 
-export interface DomTimingBreakdown {
-    /** Время до окончания загрузки DOM (DOMContentLoaded) */
+export interface NavigationTimingBreakdown {
+    /** Время на редиректы */
+    redirectMs: number;
+    /** true если редирект был cross-origin (тайминги скрыты) */
+    redirectHidden: boolean;
+    /** DNS lookup */
+    dnsMs: number;
+    /** true если DNS был из кеша */
+    dnsCached: boolean;
+    /** TCP соединение */
+    connectMs: number;
+    /** true если соединение переиспользовано (keep-alive) */
+    connectionReused: boolean;
+    /** TLS handshake (null для HTTP) */
+    sslMs: number | null;
+    /** Ожидание ответа сервера (TTFB после соединения) */
+    requestMs: number;
+    /** Скачивание ответа */
+    responseMs: number;
+    /** Парсинг HTML до DOM Interactive */
+    domParseMs: number;
+    /** Выполнение синхронных скриптов */
+    executeScriptsMs: number;
+    /** Загрузка ресурсов (CSS, JS, images) */
+    subResourcesMs: number;
+    /** DOMContentLoaded относительно navigationStart */
     domContentLoadedMs: number;
-    /** Время до полной загрузки страницы (load event) */
+    /** Load event относительно navigationStart */
     loadEventMs: number;
-    /** Время до первой отрисовки (First Paint) */
-    firstPaintMs: number | null;
-    /** Время до первой значимой отрисовки (First Contentful Paint) */
-    firstContentfulPaintMs: number | null;
 }
 
 export interface DomMetricPayload {
-    timing: DomTimingBreakdown;
-    navigationStart: number;
+    timing: NavigationTimingBreakdown;
+    /** Общее время загрузки */
+    totalMs: number;
     error?: string;
 }
 
@@ -29,10 +50,10 @@ export class DomMetricCollector
     private readonly logger = new Logger(DomMetricCollector.name);
 
     readonly key = 'page.dom';
-    readonly label = 'DOM & Paint Metrics';
+    readonly label = 'Navigation Timing';
     readonly group = MetricGroup.Browser;
     readonly description =
-        'Измеряет время до готовности DOM (DOMContentLoaded), полной загрузки (load) и первой отрисовки (FCP).';
+        'Полная разбивка времени загрузки страницы: редиректы, DNS, TCP, TLS, запрос, ответ, парсинг DOM, скрипты, ресурсы.';
 
     private browser: Browser | null = null;
 
@@ -48,7 +69,7 @@ export class DomMetricCollector
         try {
             const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
             this.browser = await puppeteer.launch({
-                headless: 'shell',
+                headless: true,
                 executablePath: executablePath || undefined,
                 args: [
                     '--no-sandbox',
@@ -99,6 +120,25 @@ export class DomMetricCollector
         return this.browser;
     }
 
+    private createEmptyTiming(): NavigationTimingBreakdown {
+        return {
+            redirectMs: 0,
+            redirectHidden: false,
+            dnsMs: 0,
+            dnsCached: false,
+            connectMs: 0,
+            connectionReused: false,
+            sslMs: null,
+            requestMs: 0,
+            responseMs: 0,
+            domParseMs: 0,
+            executeScriptsMs: 0,
+            subResourcesMs: 0,
+            domContentLoadedMs: 0,
+            loadEventMs: 0,
+        };
+    }
+
     async collect(url: string): Promise<MetricResult<DomMetricPayload>> {
         const browser = await this.ensureBrowser();
 
@@ -109,13 +149,8 @@ export class DomMetricCollector
                 group: this.group,
                 description: this.description,
                 payload: {
-                    timing: {
-                        domContentLoadedMs: 0,
-                        loadEventMs: 0,
-                        firstPaintMs: null,
-                        firstContentfulPaintMs: null,
-                    },
-                    navigationStart: 0,
+                    timing: this.createEmptyTiming(),
+                    totalMs: 0,
                     error: 'Browser not available',
                 },
                 collectedAt: new Date(),
@@ -126,37 +161,82 @@ export class DomMetricCollector
         try {
             page = await browser.newPage();
 
-            // Переходим на страницу и ждём полной загрузки
+            // Переходим на страницу и ждём полной загрузки (load event)
             await page.goto(url, {
                 waitUntil: 'load',
                 timeout: 30000,
             });
 
-            // Получаем метрики из Performance API
+            // Получаем метрики из Navigation Timing Level 2 API
             const metrics = await page.evaluate(() => {
-                const timing = performance.timing;
-                const navigationStart = timing.navigationStart;
+                const entries = performance.getEntriesByType('navigation');
+                if (!entries.length) return null;
 
-                // Paint metrics
-                const paintEntries = performance.getEntriesByType('paint');
-                const firstPaint = paintEntries.find((e) => e.name === 'first-paint');
-                const firstContentfulPaint = paintEntries.find(
-                    (e) => e.name === 'first-contentful-paint',
-                );
+                const nav = entries[0] as PerformanceNavigationTiming;
+
+                // Определяем флаги переиспользования
+                const redirectMs = nav.redirectEnd - nav.redirectStart;
+                const dnsMs = nav.domainLookupEnd - nav.domainLookupStart;
+                const connectMs = nav.connectEnd - nav.connectStart;
+
+                // SSL time (только если был secureConnectionStart и он > 0)
+                const sslMs = nav.secureConnectionStart && nav.secureConnectionStart > 0
+                    ? nav.connectEnd - nav.secureConnectionStart
+                    : null;
 
                 return {
-                    timing: {
-                        domContentLoadedMs:
-                            timing.domContentLoadedEventEnd - navigationStart,
-                        loadEventMs: timing.loadEventEnd - navigationStart,
-                        firstPaintMs: firstPaint ? Math.round(firstPaint.startTime) : null,
-                        firstContentfulPaintMs: firstContentfulPaint
-                            ? Math.round(firstContentfulPaint.startTime)
-                            : null,
-                    },
-                    navigationStart,
+                    // Фазы загрузки
+                    redirectMs,
+                    redirectHidden: redirectMs === 0 && nav.redirectCount > 0,
+                    dnsMs,
+                    dnsCached: dnsMs === 0,
+                    connectMs,
+                    connectionReused: connectMs === 0,
+                    sslMs,
+                    requestMs: nav.responseStart - nav.requestStart,
+                    responseMs: nav.responseEnd - nav.responseStart,
+                    domParseMs: nav.domInteractive - nav.responseEnd,
+                    executeScriptsMs: nav.domContentLoadedEventStart - nav.domInteractive,
+                    subResourcesMs: nav.loadEventStart - nav.domContentLoadedEventEnd,
+
+                    // Ключевые моменты (у navigation-entries это уже от startTime)
+                    domContentLoadedMs: nav.domContentLoadedEventEnd,
+                    loadEventMs: nav.loadEventEnd,
+                    totalMs: nav.loadEventEnd,
                 };
             });
+
+            if (!metrics) {
+                return {
+                    key: this.key,
+                    label: this.label,
+                    group: this.group,
+                    description: this.description,
+                    payload: {
+                        timing: this.createEmptyTiming(),
+                        totalMs: 0,
+                        error: 'Navigation timing not available',
+                    },
+                    collectedAt: new Date(),
+                };
+            }
+
+            const timing: NavigationTimingBreakdown = {
+                redirectMs: Math.round(metrics.redirectMs),
+                redirectHidden: metrics.redirectHidden,
+                dnsMs: Math.round(metrics.dnsMs),
+                dnsCached: metrics.dnsCached,
+                connectMs: Math.round(metrics.connectMs),
+                connectionReused: metrics.connectionReused,
+                sslMs: metrics.sslMs !== null ? Math.round(metrics.sslMs) : null,
+                requestMs: Math.round(metrics.requestMs),
+                responseMs: Math.round(metrics.responseMs),
+                domParseMs: Math.round(metrics.domParseMs),
+                executeScriptsMs: Math.round(metrics.executeScriptsMs),
+                subResourcesMs: Math.round(metrics.subResourcesMs),
+                domContentLoadedMs: Math.round(metrics.domContentLoadedMs),
+                loadEventMs: Math.round(metrics.loadEventMs),
+            };
 
             return {
                 key: this.key,
@@ -164,13 +244,8 @@ export class DomMetricCollector
                 group: this.group,
                 description: this.description,
                 payload: {
-                    timing: {
-                        domContentLoadedMs: Math.round(metrics.timing.domContentLoadedMs),
-                        loadEventMs: Math.round(metrics.timing.loadEventMs),
-                        firstPaintMs: metrics.timing.firstPaintMs,
-                        firstContentfulPaintMs: metrics.timing.firstContentfulPaintMs,
-                    },
-                    navigationStart: metrics.navigationStart,
+                    timing,
+                    totalMs: Math.round(metrics.totalMs),
                 },
                 collectedAt: new Date(),
             };
@@ -183,13 +258,8 @@ export class DomMetricCollector
                 group: this.group,
                 description: this.description,
                 payload: {
-                    timing: {
-                        domContentLoadedMs: 0,
-                        loadEventMs: 0,
-                        firstPaintMs: null,
-                        firstContentfulPaintMs: null,
-                    },
-                    navigationStart: 0,
+                    timing: this.createEmptyTiming(),
+                    totalMs: 0,
                     error: (error as Error).message,
                 },
                 collectedAt: new Date(),

@@ -89,6 +89,15 @@ interface ResourceTimingPayload {
   // JS Parse/Compile Metrics
   jsParseMs: number;
   jsCompileMs: number;
+  // Network Metrics
+  avgContentDownloadMs: number;
+  maxContentDownloadMs: number;
+  http2Percent: number;
+  http3Percent: number;
+  cacheHitPercent: number;
+  cacheHitCount: number;
+  swUsed: boolean;
+  swStartMs: number;
   error?: string;
 }
 
@@ -564,6 +573,33 @@ function getUnusedClass(percent: number): string {
                   <div class="dom-metric">
                     <span class="dom-metric__label">Compile Time</span>
                     <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.jsCompileMs }} мс</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Network Metrics -->
+              <div v-if="getResourceTimingPayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">🌐 Network</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Avg Download</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.avgContentDownloadMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Max Download</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.maxContentDownloadMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">HTTP/2</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.http2Percent }}%</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Cache Hit</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.cacheHitPercent }}% ({{ getResourceTimingPayload(result)!.cacheHitCount }})</span>
+                  </div>
+                  <div v-if="getResourceTimingPayload(result)!.swUsed" class="dom-metric">
+                    <span class="dom-metric__label">Service Worker</span>
+                    <span class="dom-metric__value">✓ {{ getResourceTimingPayload(result)!.swStartMs }} мс</span>
                   </div>
                 </div>
               </div>

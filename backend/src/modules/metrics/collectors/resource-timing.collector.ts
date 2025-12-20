@@ -12,6 +12,10 @@ interface ResourceEntry {
     duration: number;
     transferSize: number;
     startTime: number;
+    responseStart: number;
+    responseEnd: number;
+    nextHopProtocol: string;
+    workerStart: number;
 }
 
 export interface ResourceTimingPayload {
@@ -91,6 +95,24 @@ export interface ResourceTimingPayload {
     jsParseMs: number;
     /** Время компиляции JS (мс) */
     jsCompileMs: number;
+
+    // Network Metrics
+    /** Среднее время загрузки контента (мс) */
+    avgContentDownloadMs: number;
+    /** Максимальное время загрузки контента (мс) */
+    maxContentDownloadMs: number;
+    /** % ресурсов по HTTP/2 */
+    http2Percent: number;
+    /** % ресурсов по HTTP/3 */
+    http3Percent: number;
+    /** % ресурсов из кэша */
+    cacheHitPercent: number;
+    /** Количество ресурсов из кэша */
+    cacheHitCount: number;
+    /** Service Worker использовался */
+    swUsed: boolean;
+    /** Время инициализации Service Worker (мс) */
+    swStartMs: number;
 
     error?: string;
 }
@@ -208,6 +230,10 @@ export class ResourceTimingCollector
                     duration: Math.round(entry.duration),
                     transferSize: entry.transferSize || 0,
                     startTime: Math.round(entry.startTime),
+                    responseStart: entry.responseStart || 0,
+                    responseEnd: entry.responseEnd || 0,
+                    nextHopProtocol: entry.nextHopProtocol || '',
+                    workerStart: entry.workerStart || 0,
                 }));
             }) as ResourceEntry[];
 
@@ -323,6 +349,33 @@ export class ResourceTimingCollector
             const unusedJsPercent = jsTotalBytes > 0 ? Math.round((jsUnusedBytes / jsTotalBytes) * 100) : 0;
             const unusedCssPercent = cssTotalBytes > 0 ? Math.round((cssUnusedBytes / cssTotalBytes) * 100) : 0;
 
+            // Network Metrics
+            const contentDownloadTimes = resourceEntries
+                .filter(e => e.responseStart > 0 && e.responseEnd > 0)
+                .map(e => Math.round(e.responseEnd - e.responseStart));
+            const avgContentDownloadMs = contentDownloadTimes.length > 0
+                ? Math.round(contentDownloadTimes.reduce((a, b) => a + b, 0) / contentDownloadTimes.length)
+                : 0;
+            const maxContentDownloadMs = contentDownloadTimes.length > 0
+                ? Math.max(...contentDownloadTimes)
+                : 0;
+
+            // HTTP Protocol distribution
+            const http2Count = resourceEntries.filter(e => e.nextHopProtocol === 'h2' || e.nextHopProtocol === 'h2c').length;
+            const http3Count = resourceEntries.filter(e => e.nextHopProtocol === 'h3').length;
+            const http2Percent = resourceEntries.length > 0 ? Math.round((http2Count / resourceEntries.length) * 100) : 0;
+            const http3Percent = resourceEntries.length > 0 ? Math.round((http3Count / resourceEntries.length) * 100) : 0;
+
+            // Cache metrics
+            const cacheHitCount = resourceEntries.filter(e => e.transferSize === 0).length;
+            const cacheHitPercent = resourceEntries.length > 0 ? Math.round((cacheHitCount / resourceEntries.length) * 100) : 0;
+
+            // Service Worker
+            const swUsed = resourceEntries.some(e => e.workerStart > 0);
+            const swStartMs = swUsed
+                ? Math.round(Math.min(...resourceEntries.filter(e => e.workerStart > 0).map(e => e.workerStart)))
+                : 0;
+
             await browser.close();
             browser = null;
 
@@ -371,6 +424,15 @@ export class ResourceTimingCollector
                     // JS Parse/Compile Metrics
                     jsParseMs,
                     jsCompileMs,
+                    // Network Metrics
+                    avgContentDownloadMs,
+                    maxContentDownloadMs,
+                    http2Percent,
+                    http3Percent,
+                    cacheHitPercent,
+                    cacheHitCount,
+                    swUsed,
+                    swStartMs,
                 },
             };
         } catch (error) {
@@ -415,6 +477,14 @@ export class ResourceTimingCollector
                     cssUnusedBytes: 0,
                     jsParseMs: 0,
                     jsCompileMs: 0,
+                    avgContentDownloadMs: 0,
+                    maxContentDownloadMs: 0,
+                    http2Percent: 0,
+                    http3Percent: 0,
+                    cacheHitPercent: 0,
+                    cacheHitCount: 0,
+                    swUsed: false,
+                    swStartMs: 0,
                     error: (error as Error).message,
                 },
             };

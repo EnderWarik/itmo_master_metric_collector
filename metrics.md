@@ -9,8 +9,23 @@
 | `DomMetricCollector` | Browser | Puppeteer | Navigation Timing API |
 | `LighthouseMetricCollector` | Browser | Lighthouse | Web Vitals метрики |
 | `FpsMetricCollector` | Browser | Puppeteer | FPS в покое (3 сек) |
-| `ResourceTimingCollector` | Browser | Puppeteer + CDP | Resource Timing + V8 метрики |
+| `ResourceTimingCollector` | Browser | Puppeteer + CDP | Resource Timing + V8 + Network |
 | `E2EMetricCollector` | E2E | Puppeteer | Метрики взаимодействия + FPS |
+
+---
+
+## Сводка метрик ResourceTimingCollector
+
+Этот коллектор собирает наиболее обширный набор метрик — 40+ метрик разбитых на категории:
+
+| Категория | Метрики | Источник |
+|-----------|---------|----------|
+| **Resource Timing** | totalResources, totalTransferSize, apiRequests, scriptsCount, cssCount | `performance.getEntriesByType('resource')` |
+| **CDP V8 Performance** | scriptDurationMs, taskDurationMs, jsHeapUsedSize, layoutCount, domNodes | `Performance.getMetrics()` |
+| **GC Metrics** | gcCount, gcTotalDurationMs, gcMaxDurationMs, heapUsagePercent | CDP Tracing `v8.gc` |
+| **JS Parse/Compile** | jsParseMs, jsCompileMs | CDP Tracing `v8.compile` |
+| **Network** | avgContentDownloadMs, http2Percent, cacheHitPercent, swUsed | Resource Timing API |
+| **Coverage** | unusedJsPercent, unusedCssPercent | CDP Profiler + CSS (disabled) |
 
 ---
 
@@ -246,6 +261,47 @@ const jsCompileMs = compileEvents.reduce((sum, e) => sum + e.dur, 0);
 ```
 
 > ⚠️ **Примечание:** Значения могут быть 0 если скрипты кэшированы или слишком маленькие.
+
+---
+
+### Network Metrics
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `avgContentDownloadMs` | Среднее время загрузки контента (мс) | `responseEnd - responseStart` из Resource Timing |
+| `maxContentDownloadMs` | Максимальное время загрузки (мс) | `Math.max(responseEnd - responseStart)` |
+| `http2Percent` | % ресурсов по HTTP/2 | `nextHopProtocol === 'h2' \|\| 'h2c'` |
+| `http3Percent` | % ресурсов по HTTP/3 | `nextHopProtocol === 'h3'` |
+| `cacheHitPercent` | % ресурсов из кэша | `transferSize === 0` |
+| `cacheHitCount` | Количество ресурсов из кэша | Подсчёт `transferSize === 0` |
+| `swUsed` | Service Worker использовался | `workerStart > 0` |
+| `swStartMs` | Время инициализации SW (мс) | `min(workerStart)` из Resource Timing |
+
+**Как получаем:**
+```typescript
+const resourceEntries = await page.evaluate(() => {
+    const entries = performance.getEntriesByType('resource');
+    return entries.map(entry => ({
+        responseStart: entry.responseStart,
+        responseEnd: entry.responseEnd,
+        nextHopProtocol: entry.nextHopProtocol, // 'h2', 'h3', 'http/1.1'
+        transferSize: entry.transferSize,       // 0 = из кэша
+        workerStart: entry.workerStart,         // > 0 = Service Worker
+    }));
+});
+
+// Content Download
+const avgContentDownloadMs = mean(entries.map(e => e.responseEnd - e.responseStart));
+
+// HTTP Protocol
+const http2Percent = (entries.filter(e => e.nextHopProtocol === 'h2').length / total) * 100;
+
+// Cache Hit
+const cacheHitPercent = (entries.filter(e => e.transferSize === 0).length / total) * 100;
+
+// Service Worker
+const swUsed = entries.some(e => e.workerStart > 0);
+```
 
 ---
 

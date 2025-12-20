@@ -209,6 +209,46 @@ await client.send('Tracing.end');
 
 ---
 
+### CSS Bundle Metrics
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `cssCount` | Количество CSS файлов | Фильтр `initiatorType === 'css' \|\| 'link'` из Resource Timing |
+| `cssTotalSize` | Общий размер CSS (bytes) | Сумма `transferSize` всех CSS entries |
+
+**Как получаем:**
+```typescript
+const cssEntries = resourceEntries.filter(
+    e => e.initiatorType === 'css' || e.initiatorType === 'link'
+);
+const cssTotalSize = cssEntries.reduce((sum, e) => sum + e.transferSize, 0);
+```
+
+---
+
+### JS Parse/Compile Metrics
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `jsParseMs` | Время парсинга JS (мс) | CDP Tracing: `V8.Parse`, `V8.ParseFunction` события |
+| `jsCompileMs` | Время компиляции JS (мс) | CDP Tracing: `V8.Compile`, `V8.CompileCode` события |
+
+**Как собираем:**
+```typescript
+await client.send('Tracing.start', {
+    categories: 'v8,v8.gc,v8.compile,disabled-by-default-v8.gc,disabled-by-default-v8.compile',
+    transferMode: 'ReportEvents',
+});
+// ... page.goto() ...
+// Фильтруем события с name.includes('Parse') или name.includes('Compile')
+const jsParseMs = parseEvents.reduce((sum, e) => sum + e.dur, 0);
+const jsCompileMs = compileEvents.reduce((sum, e) => sum + e.dur, 0);
+```
+
+> ⚠️ **Примечание:** Значения могут быть 0 если скрипты кэшированы или слишком маленькие.
+
+---
+
 ## 8. E2E Metrics (Сценарии взаимодействия)
 
 **Инструмент:** Puppeteer + PerformanceObserver + requestAnimationFrame

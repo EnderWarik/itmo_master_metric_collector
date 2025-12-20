@@ -125,15 +125,12 @@ function getHeapClass(percent: number): string {
 const timeLabels = computed(() => {
   if (!props.result?.fpsTimeline?.length) return [];
   const maxTime = Math.max(...props.result.fpsTimeline.map(p => p.timeMs));
-  const maxSeconds = Math.ceil(maxTime / 1000);
+  const maxSeconds = Math.floor(maxTime / 1000); // Только полные секунды
   const labels: { second: number; x: number }[] = [];
   
   for (let s = 1; s <= maxSeconds; s++) {
     const x = chartPadding + (s * 1000 / maxTime) * (chartWidth - 2 * chartPadding);
-    // Не показываем метку если она выходит за правый край
-    if (x <= chartWidth - chartPadding + 10) {
-      labels.push({ second: s, x });
-    }
+    labels.push({ second: s, x });
   }
   
   return labels;
@@ -143,15 +140,12 @@ const timeLabels = computed(() => {
 const heapTimeLabels = computed(() => {
   if (!props.result?.heapTimeline?.length) return [];
   const maxTime = Math.max(...props.result.heapTimeline.map(p => p.time));
-  const maxSeconds = Math.ceil(maxTime / 1000);
+  const maxSeconds = Math.floor(maxTime / 1000); // Только полные секунды
   const labels: { second: number; x: number }[] = [];
   
   for (let s = 1; s <= maxSeconds; s++) {
     const x = chartPadding + (s * 1000 / maxTime) * (chartWidth - 2 * chartPadding);
-    // Не показываем метку если она выходит за правый край
-    if (x <= chartWidth - chartPadding + 10) {
-      labels.push({ second: s, x });
-    }
+    labels.push({ second: s, x });
   }
   
   return labels;

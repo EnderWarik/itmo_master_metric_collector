@@ -36,6 +36,12 @@ export interface ResourceTimingPayload {
     /** Общий размер скриптов (bytes) */
     scriptsTotalSize: number;
 
+    // CSS Metrics
+    /** Количество CSS файлов */
+    cssCount: number;
+    /** Общий размер CSS (bytes) */
+    cssTotalSize: number;
+
     // CDP Performance Metrics
     /** Время всех задач в main thread (мс) */
     taskDurationMs: number;
@@ -65,6 +71,26 @@ export interface ResourceTimingPayload {
     gcTotalDurationMs: number;
     /** Максимальная длительность одной GC (мс) */
     gcMaxDurationMs: number;
+
+    // Coverage Metrics
+    /** % неиспользуемого JS кода */
+    unusedJsPercent: number;
+    /** % неиспользуемого CSS кода */
+    unusedCssPercent: number;
+    /** Общий размер JS (bytes) */
+    jsTotalBytes: number;
+    /** Неиспользованный JS (bytes) */
+    jsUnusedBytes: number;
+    /** Общий размер CSS (bytes) - Coverage */
+    cssTotalBytes: number;
+    /** Неиспользованный CSS (bytes) */
+    cssUnusedBytes: number;
+
+    // JS Parse/Compile Metrics
+    /** Время парсинга JS (мс) */
+    jsParseMs: number;
+    /** Время компиляции JS (мс) */
+    jsCompileMs: number;
 
     error?: string;
 }
@@ -103,23 +129,42 @@ export class ResourceTimingCollector
             const client = await page.target().createCDPSession();
             await client.send('Performance.enable');
 
-            // Собираем GC события через Tracing
+            // Собираем GC и Compile события через Tracing
             const gcEvents: { name: string; dur: number }[] = [];
+            const compileEvents: { name: string; dur: number }[] = [];
             client.on('Tracing.dataCollected', (data) => {
                 for (const event of data.value || []) {
+                    // GC события
                     if (event.cat?.includes('v8.gc') || event.name?.includes('GC')) {
                         gcEvents.push({
                             name: event.name,
                             dur: event.dur ? event.dur / 1000 : 0, // микросекунды → мс
                         });
                     }
+                    // Compile/Parse события
+                    if (event.cat?.includes('v8') &&
+                        (event.name === 'V8.Compile' || event.name === 'V8.CompileCode' ||
+                            event.name === 'v8.compile' || event.name === 'V8.ParseFunction' ||
+                            event.name === 'V8.Parse' || event.name === 'v8.parseOnBackground')) {
+                        compileEvents.push({
+                            name: event.name,
+                            dur: event.dur ? event.dur / 1000 : 0,
+                        });
+                    }
                 }
             });
 
             await client.send('Tracing.start', {
-                categories: 'v8,v8.gc,disabled-by-default-v8.gc',
+                categories: 'v8,v8.gc,v8.compile,disabled-by-default-v8.gc,disabled-by-default-v8.compile',
                 transferMode: 'ReportEvents',
             });
+
+            // Включаем Coverage для JS и CSS
+            await client.send('Profiler.enable');
+            await client.send('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
+            await client.send('DOM.enable');
+            await client.send('CSS.enable');
+            await client.send('CSS.startRuleUsageTracking');
 
             // Переходим на страницу
             await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
@@ -176,6 +221,11 @@ export class ResourceTimingCollector
                 e => e.initiatorType === 'script'
             );
 
+            // Фильтруем CSS
+            const cssEntries = resourceEntries.filter(
+                e => e.initiatorType === 'css' || e.initiatorType === 'link'
+            );
+
             // Вычисляем статистику
             const apiDurations = apiEntries.map(e => e.duration);
             const totalApiDurationMs = apiDurations.reduce((a, b) => a + b, 0);
@@ -197,6 +247,7 @@ export class ResourceTimingCollector
                 }));
 
             const scriptsTotalSize = scriptEntries.reduce((sum, e) => sum + e.transferSize, 0);
+            const cssTotalSize = cssEntries.reduce((sum, e) => sum + e.transferSize, 0);
             const totalTransferSize = resourceEntries.reduce((sum, e) => sum + e.transferSize, 0);
 
             // Расчёт heap usage %
@@ -210,6 +261,67 @@ export class ResourceTimingCollector
             const gcMaxDurationMs = gcEvents.length > 0
                 ? Math.round(Math.max(...gcEvents.map(e => e.dur)))
                 : 0;
+
+            // JS Parse/Compile метрики
+            const parseEvents = compileEvents.filter(e =>
+                e.name.includes('Parse') || e.name.includes('parse'));
+            const compileOnlyEvents = compileEvents.filter(e =>
+                e.name.includes('Compile') || e.name.includes('compile'));
+            const jsParseMs = Math.round(parseEvents.reduce((sum, e) => sum + e.dur, 0));
+            const jsCompileMs = Math.round(compileOnlyEvents.reduce((sum, e) => sum + e.dur, 0));
+
+            // Собираем Coverage данные
+            let jsTotalBytes = 0;
+            let jsUnusedBytes = 0;
+            let cssTotalBytes = 0;
+            let cssUnusedBytes = 0;
+
+            try {
+                // JS Coverage - используем endOffset из функций для определения размера
+                const jsCoverage = await client.send('Profiler.takePreciseCoverage');
+                for (const entry of jsCoverage.result || []) {
+                    // Находим максимальный endOffset как приближение к размеру скрипта
+                    let scriptSize = 0;
+                    let usedBytes = 0;
+
+                    for (const func of entry.functions || []) {
+                        for (const range of func.ranges || []) {
+                            // Первый range каждой функции - весь код функции
+                            // Последующие - использованные части
+                            if (range.endOffset > scriptSize) {
+                                scriptSize = range.endOffset;
+                            }
+                            // count > 0 означает код был выполнен
+                            if (range.count > 0) {
+                                usedBytes += range.endOffset - range.startOffset;
+                            }
+                        }
+                    }
+
+                    if (scriptSize > 0) {
+                        jsTotalBytes += scriptSize;
+                        jsUnusedBytes += Math.max(0, scriptSize - usedBytes);
+                    }
+                }
+
+                // CSS Coverage
+                const cssCoverage = await client.send('CSS.stopRuleUsageTracking');
+                for (const rule of cssCoverage.ruleUsage || []) {
+                    cssTotalBytes += rule.endOffset - rule.startOffset;
+                    if (!rule.used) {
+                        cssUnusedBytes += rule.endOffset - rule.startOffset;
+                    }
+                }
+            } catch (coverageError) {
+                this.logger.warn('Coverage collection failed:', (coverageError as Error).message);
+            }
+
+            // Останавливаем Profiler
+            await client.send('Profiler.stopPreciseCoverage').catch(() => { });
+            await client.send('Profiler.disable').catch(() => { });
+
+            const unusedJsPercent = jsTotalBytes > 0 ? Math.round((jsUnusedBytes / jsTotalBytes) * 100) : 0;
+            const unusedCssPercent = cssTotalBytes > 0 ? Math.round((cssUnusedBytes / cssTotalBytes) * 100) : 0;
 
             await browser.close();
             browser = null;
@@ -231,6 +343,9 @@ export class ResourceTimingCollector
                     scriptDurationMs,
                     scriptsCount: scriptEntries.length,
                     scriptsTotalSize,
+                    // CSS Metrics
+                    cssCount: cssEntries.length,
+                    cssTotalSize,
                     // CDP Performance Metrics
                     taskDurationMs,
                     jsHeapUsedSize,
@@ -246,6 +361,16 @@ export class ResourceTimingCollector
                     gcCount,
                     gcTotalDurationMs,
                     gcMaxDurationMs,
+                    // Coverage Metrics
+                    unusedJsPercent,
+                    unusedCssPercent,
+                    jsTotalBytes,
+                    jsUnusedBytes,
+                    cssTotalBytes,
+                    cssUnusedBytes,
+                    // JS Parse/Compile Metrics
+                    jsParseMs,
+                    jsCompileMs,
                 },
             };
         } catch (error) {
@@ -267,6 +392,8 @@ export class ResourceTimingCollector
                     scriptDurationMs: 0,
                     scriptsCount: 0,
                     scriptsTotalSize: 0,
+                    cssCount: 0,
+                    cssTotalSize: 0,
                     taskDurationMs: 0,
                     jsHeapUsedSize: 0,
                     jsHeapTotalSize: 0,
@@ -280,6 +407,14 @@ export class ResourceTimingCollector
                     gcCount: 0,
                     gcTotalDurationMs: 0,
                     gcMaxDurationMs: 0,
+                    unusedJsPercent: 0,
+                    unusedCssPercent: 0,
+                    jsTotalBytes: 0,
+                    jsUnusedBytes: 0,
+                    cssTotalBytes: 0,
+                    cssUnusedBytes: 0,
+                    jsParseMs: 0,
+                    jsCompileMs: 0,
                     error: (error as Error).message,
                 },
             };

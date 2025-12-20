@@ -61,6 +61,9 @@ interface ResourceTimingPayload {
   scriptDurationMs: number;
   scriptsCount: number;
   scriptsTotalSize: number;
+  // CSS Metrics
+  cssCount: number;
+  cssTotalSize: number;
   // CDP Performance Metrics
   taskDurationMs: number;
   jsHeapUsedSize: number;
@@ -76,6 +79,16 @@ interface ResourceTimingPayload {
   gcCount: number;
   gcTotalDurationMs: number;
   gcMaxDurationMs: number;
+  // Coverage Metrics
+  unusedJsPercent: number;
+  unusedCssPercent: number;
+  jsTotalBytes: number;
+  jsUnusedBytes: number;
+  cssTotalBytes: number;
+  cssUnusedBytes: number;
+  // JS Parse/Compile Metrics
+  jsParseMs: number;
+  jsCompileMs: number;
   error?: string;
 }
 
@@ -190,6 +203,12 @@ function getHeapClass(percent: number): string {
   if (percent <= 50) return 'heap--good';
   if (percent <= 80) return 'heap--average';
   return 'heap--poor';
+}
+
+function getUnusedClass(percent: number): string {
+  if (percent <= 20) return 'unused--good';
+  if (percent <= 50) return 'unused--average';
+  return 'unused--poor';
 }
 </script>
 
@@ -426,6 +445,14 @@ function getHeapClass(percent: number): string {
                     <span class="dom-metric__label">Размер скриптов</span>
                     <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.scriptsTotalSize) }}</span>
                   </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">CSS файлов</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.cssCount }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Размер CSS</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.cssTotalSize) }}</span>
+                  </div>
                 </div>
               </div>
 
@@ -493,6 +520,50 @@ function getHeapClass(percent: number): string {
                   <div class="dom-metric">
                     <span class="dom-metric__label">GC Max</span>
                     <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.gcMaxDurationMs }} мс</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Code Coverage - disabled, not working reliably -->
+              <!--
+              <div v-if="getResourceTimingPayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">📊 Code Coverage</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Unused JS</span>
+                    <span class="dom-metric__value" :class="getUnusedClass(getResourceTimingPayload(result)!.unusedJsPercent)">
+                      {{ getResourceTimingPayload(result)!.unusedJsPercent }}%
+                    </span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Unused CSS</span>
+                    <span class="dom-metric__value" :class="getUnusedClass(getResourceTimingPayload(result)!.unusedCssPercent)">
+                      {{ getResourceTimingPayload(result)!.unusedCssPercent }}%
+                    </span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">JS Unused</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.jsUnusedBytes) }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">CSS Unused</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.cssUnusedBytes) }}</span>
+                  </div>
+                </div>
+              </div>
+              -->
+
+              <!-- JS Parse/Compile -->
+              <div v-if="getResourceTimingPayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">⚡ JS Parse/Compile</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Parse Time</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.jsParseMs }} мс</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Compile Time</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.jsCompileMs }} мс</span>
                   </div>
                 </div>
               </div>
@@ -819,6 +890,19 @@ function getHeapClass(percent: number): string {
 }
 
 .heap--poor {
+  color: #ef4444;
+}
+
+/* Unused Code (lower = better) */
+.unused--good {
+  color: #22c55e;
+}
+
+.unused--average {
+  color: #f59e0b;
+}
+
+.unused--poor {
   color: #ef4444;
 }
 

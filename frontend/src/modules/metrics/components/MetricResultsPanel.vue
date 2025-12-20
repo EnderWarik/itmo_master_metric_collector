@@ -98,6 +98,11 @@ interface ResourceTimingPayload {
   cacheHitCount: number;
   swUsed: boolean;
   swStartMs: number;
+  // MFE Comparison Metrics
+  chunkedJsCount: number;
+  largestChunkSize: number;
+  uniqueDomains: number;
+  domainsList: string[];
   error?: string;
 }
 
@@ -604,6 +609,28 @@ function getUnusedClass(percent: number): string {
                 </div>
               </div>
 
+              <!-- MFE Comparison Metrics -->
+              <div v-if="getResourceTimingPayload(result)" class="timing-breakdown">
+                <p class="timing-section-title">📦 MFE Comparison</p>
+                <div class="dom-metrics">
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Lazy Chunks</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.chunkedJsCount }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Largest Chunk</span>
+                    <span class="dom-metric__value">{{ formatBytes(getResourceTimingPayload(result)!.largestChunkSize) }}</span>
+                  </div>
+                  <div class="dom-metric">
+                    <span class="dom-metric__label">Domains</span>
+                    <span class="dom-metric__value">{{ getResourceTimingPayload(result)!.uniqueDomains }}</span>
+                  </div>
+                </div>
+                <div v-if="getResourceTimingPayload(result)!.domainsList.length > 1" class="domains-list">
+                  <small>{{ getResourceTimingPayload(result)!.domainsList.join(' · ') }}</small>
+                </div>
+              </div>
+
               <details class="details">
                 <summary class="details__summary">Техническая информация</summary>
                 <pre class="payload__code">{{ JSON.stringify(result.payload, null, 2) }}</pre>
@@ -1008,5 +1035,18 @@ function getUnusedClass(percent: number): string {
 
 .fps--poor {
   color: #ef4444 !important;
+}
+
+.domains-list {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(100, 116, 139, 0.1);
+  border-radius: 0.375rem;
+  word-break: break-all;
+}
+
+.domains-list small {
+  color: #64748b;
+  font-size: 0.75rem;
 }
 </style>

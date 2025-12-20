@@ -114,6 +114,16 @@ export interface ResourceTimingPayload {
     /** Время инициализации Service Worker (мс) */
     swStartMs: number;
 
+    // MFE Comparison Metrics
+    /** Количество ленивых JS чанков */
+    chunkedJsCount: number;
+    /** Размер самого большого скрипта (bytes) */
+    largestChunkSize: number;
+    /** Количество уникальных доменов */
+    uniqueDomains: number;
+    /** Список уникальных доменов */
+    domainsList: string[];
+
     error?: string;
 }
 
@@ -376,6 +386,28 @@ export class ResourceTimingCollector
                 ? Math.round(Math.min(...resourceEntries.filter(e => e.workerStart > 0).map(e => e.workerStart)))
                 : 0;
 
+            // MFE Comparison Metrics
+            // Количество JS файлов (чем больше — тем больше code-split)
+            const chunkedJsCount = scriptEntries.length;
+
+            // Самый большой скрипт
+            const largestChunkSize = scriptEntries.length > 0
+                ? Math.max(...scriptEntries.map(e => e.transferSize))
+                : 0;
+
+            // Уникальные домены
+            const domains = new Set<string>();
+            for (const entry of resourceEntries) {
+                try {
+                    const url = new URL(entry.name);
+                    domains.add(url.hostname);
+                } catch {
+                    // пропускаем невалидные URL (data:, blob:, etc)
+                }
+            }
+            const domainsList = Array.from(domains).sort();
+            const uniqueDomains = domainsList.length;
+
             await browser.close();
             browser = null;
 
@@ -433,6 +465,11 @@ export class ResourceTimingCollector
                     cacheHitCount,
                     swUsed,
                     swStartMs,
+                    // MFE Comparison Metrics
+                    chunkedJsCount,
+                    largestChunkSize,
+                    uniqueDomains,
+                    domainsList,
                 },
             };
         } catch (error) {
@@ -485,6 +522,10 @@ export class ResourceTimingCollector
                     cacheHitCount: 0,
                     swUsed: false,
                     swStartMs: 0,
+                    chunkedJsCount: 0,
+                    largestChunkSize: 0,
+                    uniqueDomains: 0,
+                    domainsList: [],
                     error: (error as Error).message,
                 },
             };

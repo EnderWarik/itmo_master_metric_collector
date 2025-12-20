@@ -305,6 +305,45 @@ const swUsed = entries.some(e => e.workerStart > 0);
 
 ---
 
+### MFE Comparison Metrics
+
+Метрики для сравнения производительности **Монолит vs Микрофронтенд**:
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `chunkedJsCount` | Количество JS файлов | `scriptEntries.length` |
+| `largestChunkSize` | Размер самого большого скрипта (bytes) | `Math.max(scriptEntries.transferSize)` |
+| `uniqueDomains` | Кол-во уникальных доменов | Parse `new URL(entry.name).hostname` |
+| `domainsList` | Список всех доменов | Сортированный `Set` всех origins |
+
+**Как получаем:**
+```typescript
+// Количество JS файлов
+const chunkedJsCount = scriptEntries.length;
+
+// Самый большой скрипт
+const largestChunkSize = Math.max(...scriptEntries.map(e => e.transferSize));
+
+// Уникальные домены (показывает кол-во remote MFE хостов)
+const domains = new Set<string>();
+for (const entry of resourceEntries) {
+    const url = new URL(entry.name);
+    domains.add(url.hostname);
+}
+const uniqueDomains = domains.size;
+const domainsList = Array.from(domains).sort();
+```
+
+**Как интерпретировать:**
+
+| Метрика | Монолит | MFE |
+|---------|---------|-----|
+| `chunkedJsCount` | Меньше (~10-20) | Больше (~30+) |
+| `largestChunkSize` | Большой (500KB+) | Меньше (<200KB) |
+| `uniqueDomains` | 1-2 | 3+ (каждый MFE на своём домене) |
+
+---
+
 ## 8. E2E Metrics (Сценарии взаимодействия)
 
 **Инструмент:** Puppeteer + PerformanceObserver + requestAnimationFrame

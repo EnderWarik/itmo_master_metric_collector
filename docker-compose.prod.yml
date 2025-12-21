@@ -1,0 +1,39 @@
+services:
+  metrics-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: metrics-backend:latest
+    container_name: metrics-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3000
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    shm_size: '2gb'
+    ports:
+      - "127.0.0.1:3001:3000"
+    networks:
+      - metric
+
+  metrics-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://metric.pizza.ew-production.ru/api
+    image: metrics-frontend:latest
+    container_name: metrics-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    networks:
+      - metric
+
+networks:
+  metric:
+    driver: bridge

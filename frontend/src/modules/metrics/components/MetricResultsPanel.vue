@@ -291,7 +291,7 @@ function getUnusedClass(percent: number): string {
                   <div
                     v-if="getTtfbTiming(result)!.tlsHandshakeMs !== null"
                     class="timing-segment timing-segment--tls"
-                    :style="{ flex: getTtfbTiming(result)!.tlsHandshakeMs }"
+                    :style="{ flex: getTtfbTiming(result)!.tlsHandshakeMs ?? 0 }"
                     :title="`TLS: ${formatMsShort(getTtfbTiming(result)!.tlsHandshakeMs!)} мс`"
                   ></div>
                   <div

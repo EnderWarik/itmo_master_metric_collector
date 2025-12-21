@@ -362,7 +362,11 @@ export class E2EMetricCollector {
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--no-zygote',
+                '--js-flags=--max-old-space-size=512',
             ],
+            protocolTimeout: 60000,
         });
 
         this.logger.log('Browser launched for E2E scenarios');

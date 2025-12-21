@@ -20,7 +20,7 @@ interface Scenario {
 }
 
 const emit = defineEmits<{
-  (e: 'run-scenario', scenario: Scenario): void;
+  (e: 'run-scenario', scenario: Scenario, repeatCount: number): void;
 }>();
 
 
@@ -29,6 +29,10 @@ const scenarioName = ref('Мой сценарий');
 const steps = ref<ScenarioStep[]>([]);
 const isRecording = ref(false);
 const iframeRef = ref<HTMLIFrameElement | null>(null);
+
+// Настройки повторений
+const repeatEnabled = ref(false);
+const repeatCount = ref(3);
 
 
 const newStep = ref<ScenarioStep>({
@@ -75,7 +79,7 @@ function runScenario() {
     steps: steps.value,
   };
   
-  emit('run-scenario', scenario);
+  emit('run-scenario', scenario, repeatEnabled.value ? repeatCount.value : 1);
 }
 
 function exportScenario() {
@@ -115,7 +119,7 @@ function importScenario(event: Event) {
 
 function loadPresetPizzaScenario() {
   scenarioName.value = 'Заказ пиццы';
-  targetUrl.value = 'https:
+  targetUrl.value = 'https://pizza.ew-production.ru/';
   steps.value = [
     { action: 'type', selector: 'input[name="pizza_name"]', value: 'my pizza', label: 'Ввод названия пиццы' },
     { action: 'click', selector: 'div[class*="result"] button', label: 'Клик Готовьте' },
@@ -162,8 +166,26 @@ const actionLabels: Record<ScenarioAction, string> = {
       </div>
       <div class="form-group">
         <label>URL страницы</label>
-        <input v-model="targetUrl" type="url" placeholder="https:
+        <input v-model="targetUrl" type="url" placeholder="https://example.com">
       </div>
+    </div>
+
+    <!-- Repeat Config -->
+    <div class="repeat-config">
+      <label class="checkbox-label">
+        <input type="checkbox" v-model="repeatEnabled">
+        <span>Повторять замер</span>
+      </label>
+      <template v-if="repeatEnabled">
+        <input 
+          v-model.number="repeatCount" 
+          type="number" 
+          min="2" 
+          max="10"
+          class="repeat-input"
+        >
+        <span class="repeat-hint">раз (результат — среднее)</span>
+      </template>
     </div>
 
     <div class="add-step-form">
@@ -438,5 +460,46 @@ const actionLabels: Record<ScenarioAction, string> = {
 .btn--large {
   padding: 0.75rem 2rem;
   font-size: 1rem;
+}
+
+/* Repeat config */
+.repeat-config {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f0f9ff;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #4f46e5;
+}
+
+.repeat-input {
+  width: 60px;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.repeat-hint {
+  font-size: 0.8rem;
+  color: #64748b;
 }
 </style>

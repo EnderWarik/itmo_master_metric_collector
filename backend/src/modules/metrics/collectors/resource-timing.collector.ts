@@ -151,7 +151,11 @@ export class ResourceTimingCollector
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
                     '--disable-gpu',
+                    '--disable-software-rasterizer',
+                    '--no-zygote',
+                    '--js-flags=--max-old-space-size=512',
                 ],
+                protocolTimeout: 60000,
             });
 
             const page = await browser.newPage();

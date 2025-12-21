@@ -80,7 +80,7 @@ export class DomMetricCollector
                     '--disable-extensions',
                     '--no-first-run',
                     '--no-zygote',
-                    '--single-process',
+                    // '--single-process', // опасно на продакшне — может крашиться
                     '--disable-accelerated-2d-canvas',
                     '--disable-background-networking',
                     '--disable-default-apps',
@@ -90,8 +90,9 @@ export class DomMetricCollector
                     '--mute-audio',
                     '--no-default-browser-check',
                     '--font-render-hinting=none',
+                    '--js-flags=--max-old-space-size=512', // ограничение памяти V8
                 ],
-                protocolTimeout: 30000,
+                protocolTimeout: 60000, // 60 сек вместо 30
             });
             this.logger.log('Browser launched successfully');
         } catch (error) {

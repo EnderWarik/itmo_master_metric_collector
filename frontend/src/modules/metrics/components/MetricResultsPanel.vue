@@ -108,9 +108,82 @@ interface ResourceTimingPayload {
 
 const props = defineProps<{
   results: MetricResult[];
+  allResults?: MetricResult[][];
   errorMessage: string | null;
   isCollecting: boolean;
 }>();
+
+// Функция экспорта всех замеров в CSV
+function exportMetrics() {
+  // Используем allResults если есть, иначе текущие results как один замер
+  const runs = props.allResults?.length ? props.allResults : [props.results];
+  const firstRun = runs[0];
+  if (!firstRun || !firstRun.length) return;
+  
+  // Собираем все уникальные ключи метрик в формате "метрика:поле"
+  const allKeys: string[] = [];
+  const keySet = new Set<string>();
+  
+  firstRun.forEach(result => {
+    const payload = result.payload as Record<string, unknown>;
+    Object.keys(payload).forEach(key => {
+      const value = payload[key];
+      if (typeof value === 'number') {
+        const fullKey = `${result.label}|${key}`;
+        if (!keySet.has(fullKey)) {
+          keySet.add(fullKey);
+          allKeys.push(fullKey);
+        }
+      }
+    });
+  });
+  
+  const headers = ['Замер', ...allKeys.map(k => k.replace('|', ' - '))];
+  
+  // Строки данных по каждому замеру
+  const dataRows: (string | number)[][] = runs.map((run, i) => {
+    const row: (string | number)[] = [i + 1];
+    allKeys.forEach(fullKey => {
+      const [label, payloadKey] = fullKey.split('|');
+      const result = run.find(r => r.label === label);
+      if (result && payloadKey) {
+        const payload = result.payload as Record<string, unknown>;
+        const value = payload[payloadKey];
+        row.push(typeof value === 'number' ? Math.round(value * 100) / 100 : '');
+      } else {
+        row.push('');
+      }
+    });
+    return row;
+  });
+  
+  // Строка со средним значением
+  const avgRow: (string | number)[] = ['Среднее'];
+  allKeys.forEach((_, colIndex) => {
+    const values = dataRows
+      .map(row => row[colIndex + 1])
+      .filter(v => typeof v === 'number') as number[];
+    if (values.length) {
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      avgRow.push(Math.round(avg * 100) / 100);
+    } else {
+      avgRow.push('');
+    }
+  });
+  
+  const allRows = runs.length > 1 ? [...dataRows, avgRow] : dataRows;
+  
+  const bom = '\uFEFF';
+  const csv = bom + [headers.join(';'), ...allRows.map(row => row.join(';'))].join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `metrics-${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const lastRunTime = computed(() => {
   if (!props.results.length) return null;
@@ -234,9 +307,18 @@ function getUnusedClass(percent: number): string {
           <p class="header__eyebrow">Результаты измерений</p>
           <h2 class="header__title">Последний запуск</h2>
         </div>
-        <span v-if="lastRunTime" class="badge">
-          {{ lastRunTime }}
-        </span>
+        <div class="header__actions">
+          <button 
+            v-if="results.length" 
+            class="btn btn--export" 
+            @click="exportMetrics"
+          >
+            📥 Экспорт CSV{{ allResults && allResults.length > 1 ? ` (${allResults.length})` : '' }}
+          </button>
+          <span v-if="lastRunTime" class="badge">
+            {{ lastRunTime }}
+          </span>
+        </div>
       </div>
     </template>
 
@@ -653,6 +735,29 @@ function getUnusedClass(percent: number): string {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn--export {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn--export:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .header__eyebrow {

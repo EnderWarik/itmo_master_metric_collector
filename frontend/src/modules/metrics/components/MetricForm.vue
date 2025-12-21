@@ -6,6 +6,7 @@ import type { CollectMetricsPayload } from '../services/metricsApi';
 
 export interface MetricFormPayload extends CollectMetricsPayload {
   runE2E: boolean;
+  repeatCount: number;
 }
 
 const props = defineProps<{
@@ -23,6 +24,8 @@ const form = reactive<CollectMetricsPayload>({
 });
 
 const runE2E = ref(true);
+const repeatEnabled = ref(false);
+const repeatCount = ref(3);
 
 const metricSummary = computed(() => {
   if (props.isLoadingDefinitions) {
@@ -40,7 +43,11 @@ function handleSubmit(event: Event) {
     return;
   }
 
-  emit('submit', { ...form, runE2E: runE2E.value });
+  emit('submit', { 
+    ...form, 
+    runE2E: runE2E.value,
+    repeatCount: repeatEnabled.value ? repeatCount.value : 1
+  });
 }
 </script>
 
@@ -57,6 +64,23 @@ function handleSubmit(event: Event) {
       <span>Запустить E2E тест (пицца)</span>
     </label>
 
+    <div class="repeat-config">
+      <label class="checkbox-label">
+        <input type="checkbox" v-model="repeatEnabled">
+        <span>Повторять замер</span>
+      </label>
+      <template v-if="repeatEnabled">
+        <input 
+          v-model.number="repeatCount" 
+          type="number" 
+          min="2" 
+          max="10"
+          class="repeat-input"
+        >
+        <span class="repeat-hint">раз (результат — среднее)</span>
+      </template>
+    </div>
+
     <ButtonPrimary
       class="form__action"
       type="submit"
@@ -69,6 +93,7 @@ function handleSubmit(event: Event) {
     <p class="form__hint">
       Будут измерены: <span class="form__hint-em">{{ metricSummary }}</span>
       <template v-if="runE2E"> + E2E сценарий</template>
+      <template v-if="repeatEnabled"> (×{{ repeatCount }})</template>
     </p>
   </form>
 </template>
@@ -108,5 +133,45 @@ function handleSubmit(event: Event) {
   width: 1rem;
   height: 1rem;
   accent-color: #4f46e5;
+}
+
+/* Repeat config */
+.repeat-config {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f0f9ff;
+  border-radius: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #4f46e5;
+}
+
+.repeat-input {
+  width: 60px;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.repeat-hint {
+  font-size: 0.8rem;
+  color: #64748b;
 }
 </style>

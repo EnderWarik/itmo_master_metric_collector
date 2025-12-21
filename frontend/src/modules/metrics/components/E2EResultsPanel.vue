@@ -38,12 +38,84 @@ interface E2EResult {
 
 const props = defineProps<{
   result: E2EResult | null;
+  allResults?: E2EResult[];
   isRunning: boolean;
+  progress?: { current: number; total: number };
 }>();
 
 import { computed } from 'vue';
 
-
+// Функция экспорта в CSV
+function exportResults() {
+  // Используем allResults если есть, иначе result как один замер
+  const runs = props.allResults?.length ? props.allResults : (props.result ? [props.result] : []);
+  if (!runs.length) return;
+  
+  const headers = [
+    'Замер',
+    'scenarioDurationMs',
+    'totalDurationMs',
+    'avgInputDelayMs',
+    'maxInputDelayMs',
+    'avgFps',
+    'minFps',
+    'totalFrames',
+    'droppedFrames',
+    'totalLongTasks',
+    'totalLongTasksMs',
+    'avgHeapUsagePercent',
+    'maxHeapUsagePercent',
+    'success'
+  ];
+  
+  const dataRows = runs.map((r, i) => [
+    i + 1,
+    r.scenarioDurationMs,
+    r.totalDurationMs,
+    r.avgInputDelayMs,
+    r.maxInputDelayMs,
+    r.avgFps ?? '',
+    r.minFps ?? '',
+    r.totalFrames ?? '',
+    r.droppedFrames ?? '',
+    r.totalLongTasks,
+    r.totalLongTasksMs,
+    r.avgHeapUsagePercent ?? '',
+    r.maxHeapUsagePercent ?? '',
+    r.success ? 'Да' : 'Нет'
+  ]);
+  
+  // Строка со средним значением (для числовых колонок)
+  const avgRow: (string | number)[] = ['Среднее'];
+  for (let col = 1; col < headers.length; col++) {
+    if (headers[col] === 'success') {
+      avgRow.push('');
+    } else {
+      const values = dataRows
+        .map(row => row[col])
+        .filter(v => typeof v === 'number') as number[];
+      if (values.length) {
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        avgRow.push(Math.round(avg * 100) / 100);
+      } else {
+        avgRow.push('');
+      }
+    }
+  }
+  
+  const allRows = runs.length > 1 ? [...dataRows, avgRow] : dataRows;
+  
+  const bom = '\uFEFF';
+  const csv = bom + [headers.join(';'), ...allRows.map(row => row.join(';'))].join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `e2e-results-${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 const chartWidth = 400;
 const chartHeight = 100;
 const chartPadding = 20;
@@ -173,11 +245,23 @@ function getFpsClass(fps: number): string {
 
 <template>
   <div class="e2e-results">
-    <h3>📊 Результаты E2E</h3>
+    <div class="results-header">
+      <h3>📊 Результаты E2E</h3>
+      <button 
+        v-if="result" 
+        class="btn btn--export" 
+        @click="exportResults"
+      >
+        📥 Экспорт CSV{{ allResults && allResults.length > 1 ? ` (${allResults.length})` : '' }}
+      </button>
+    </div>
 
     <div v-if="isRunning" class="running-state">
       <div class="spinner"></div>
-      <span>Выполняется сценарий...</span>
+      <span v-if="progress && progress.total > 1">
+        Замер {{ progress.current }} из {{ progress.total }}...
+      </span>
+      <span v-else>Выполняется сценарий...</span>
     </div>
 
     <div v-else-if="!result" class="empty-state">
@@ -439,8 +523,32 @@ function getFpsClass(fps: number): string {
 }
 
 .e2e-results h3 {
-  margin: 0 0 1.5rem 0;
+  margin: 0;
   font-size: 1.25rem;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.btn--export {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn--export:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .running-state {

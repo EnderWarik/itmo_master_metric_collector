@@ -4,7 +4,7 @@
 
 | Коллектор | Группа | Инструмент | Описание |
 |-----------|--------|------------|----------|
-| `PingMetricCollector` | Server | Node.js TCP | Сетевая доступность и RTT |
+| `PingMetricCollector` | Server | Node.js fetch | HTTP-доступность и время отклика |
 | `TtfbMetricCollector` | Server | Node.js HTTP/HTTPS | Time To First Byte с детализацией |
 | `DomMetricCollector` | Browser | Puppeteer | Navigation Timing API |
 | `LighthouseMetricCollector` | Browser | Lighthouse | Web Vitals метрики |
@@ -29,16 +29,22 @@
 
 ---
 
-## 1. Ping (`network.ping`)
+## 1. Ping (`availability.ping`)
 
-**Инструмент:** Node.js `net.Socket`
+**Инструмент:** Node.js `fetch`
 
-**Что измеряет:**
-- `elapsedMs` — время установки TCP-соединения (RTT)
+**Метрики:**
+
+| Метрика | Описание | Как измеряется |
+|---------|----------|----------------|
+| `elapsedMs` | Время полного HTTP-запроса (мс) | `performance.now()` до и после `fetch()` |
+| `status` | HTTP статус код ответа | `response.status` (null при ошибке) |
+| `ok` | Успешность запроса (2xx) | `response.ok` |
+| `error` | Текст ошибки (если есть) | `(error as Error).message` |
 
 **Как работает:**
 ```
-Создание сокета → connect() → время до события 'connect'
+fetch(url, { method: 'GET', redirect: 'follow' }) → измерение времени до получения ответа
 ```
 
 ---

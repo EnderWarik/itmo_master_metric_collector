@@ -88,7 +88,7 @@ export class TtfbMetricCollector
           method: 'GET',
           timeout: 10000,
           headers: {
-            'User-Agent': 'NIR3-Metrics/1.0 (+https:
+            'User-Agent': 'NIR3-Metrics/1.0',
           },
         },
         (res) => {

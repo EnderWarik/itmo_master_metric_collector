@@ -27,6 +27,8 @@ export class FpsMetricCollector
     readonly key = 'page.fps';
     readonly label = 'FPS';
     readonly group = MetricGroup.Browser;
+    readonly description =
+        'FPS в покое — средний, минимальный и максимальный FPS за 3 секунды после загрузки страницы.';
 
     private readonly logger = new Logger(FpsMetricCollector.name);
     private browser: puppeteer.Browser | null = null;
@@ -53,7 +55,11 @@ export class FpsMetricCollector
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--no-zygote',
+                '--js-flags=--max-old-space-size=512',
             ],
+            protocolTimeout: 60000,
         });
         this.logger.log('Browser launched for FPS metrics');
     }

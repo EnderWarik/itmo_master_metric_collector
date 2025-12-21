@@ -40,13 +40,13 @@ export interface ResourceTimingPayload {
     /** Общий размер скриптов (bytes) */
     scriptsTotalSize: number;
 
-    // CSS Metrics
+
     /** Количество CSS файлов */
     cssCount: number;
     /** Общий размер CSS (bytes) */
     cssTotalSize: number;
 
-    // CDP Performance Metrics
+
     /** Время всех задач в main thread (мс) */
     taskDurationMs: number;
     /** Использованная память JS heap (bytes) */
@@ -68,7 +68,7 @@ export interface ResourceTimingPayload {
     /** Количество event listeners */
     jsEventListeners: number;
 
-    // GC Metrics
+
     /** Количество сборок мусора */
     gcCount: number;
     /** Суммарное время GC (мс) */
@@ -76,7 +76,7 @@ export interface ResourceTimingPayload {
     /** Максимальная длительность одной GC (мс) */
     gcMaxDurationMs: number;
 
-    // Coverage Metrics
+
     /** % неиспользуемого JS кода */
     unusedJsPercent: number;
     /** % неиспользуемого CSS кода */
@@ -90,13 +90,13 @@ export interface ResourceTimingPayload {
     /** Неиспользованный CSS (bytes) */
     cssUnusedBytes: number;
 
-    // JS Parse/Compile Metrics
+
     /** Время парсинга JS (мс) */
     jsParseMs: number;
     /** Время компиляции JS (мс) */
     jsCompileMs: number;
 
-    // Network Metrics
+
     /** Среднее время загрузки контента (мс) */
     avgContentDownloadMs: number;
     /** Максимальное время загрузки контента (мс) */
@@ -114,7 +114,7 @@ export interface ResourceTimingPayload {
     /** Время инициализации Service Worker (мс) */
     swStartMs: number;
 
-    // MFE Comparison Metrics
+
     /** Количество ленивых JS чанков */
     chunkedJsCount: number;
     /** Размер самого большого скрипта (bytes) */
@@ -157,23 +157,23 @@ export class ResourceTimingCollector
             const page = await browser.newPage();
             await page.setViewport({ width: 1920, height: 1080 });
 
-            // Создаем CDP сессию для получения Performance metrics
+
             const client = await page.target().createCDPSession();
             await client.send('Performance.enable');
 
-            // Собираем GC и Compile события через Tracing
+
             const gcEvents: { name: string; dur: number }[] = [];
             const compileEvents: { name: string; dur: number }[] = [];
             client.on('Tracing.dataCollected', (data) => {
                 for (const event of data.value || []) {
-                    // GC события
+
                     if (event.cat?.includes('v8.gc') || event.name?.includes('GC')) {
                         gcEvents.push({
                             name: event.name,
-                            dur: event.dur ? event.dur / 1000 : 0, // микросекунды → мс
+                            dur: event.dur ? event.dur / 1000 : 0,
                         });
                     }
-                    // Compile/Parse события
+
                     if (event.cat?.includes('v8') &&
                         (event.name === 'V8.Compile' || event.name === 'V8.CompileCode' ||
                             event.name === 'v8.compile' || event.name === 'V8.ParseFunction' ||
@@ -191,25 +191,25 @@ export class ResourceTimingCollector
                 transferMode: 'ReportEvents',
             });
 
-            // Включаем Coverage для JS и CSS
+
             await client.send('Profiler.enable');
             await client.send('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
             await client.send('DOM.enable');
             await client.send('CSS.enable');
             await client.send('CSS.startRuleUsageTracking');
 
-            // Переходим на страницу
+
             await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
 
-            // Ждём дополнительно для полной загрузки
+
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Останавливаем tracing
+
             await client.send('Tracing.end');
-            // Ждём завершения сбора данных
+
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            // Получаем Performance metrics через CDP
+
             const metrics = await client.send('Performance.getMetrics');
 
             const getMetric = (name: string): number => {
@@ -217,13 +217,13 @@ export class ResourceTimingCollector
                 return metric ? metric.value : 0;
             };
 
-            // CDP метрики (времена в секундах, конвертируем в мс)
+
             const scriptDurationMs = Math.round(getMetric('ScriptDuration') * 1000);
             const taskDurationMs = Math.round(getMetric('TaskDuration') * 1000);
             const layoutDurationMs = Math.round(getMetric('LayoutDuration') * 1000);
             const recalcStyleDurationMs = Math.round(getMetric('RecalcStyleDuration') * 1000);
 
-            // CDP метрики (количество/размер)
+
             const jsHeapUsedSize = Math.round(getMetric('JSHeapUsedSize'));
             const jsHeapTotalSize = Math.round(getMetric('JSHeapTotalSize'));
             const layoutCount = Math.round(getMetric('LayoutCount'));
@@ -231,7 +231,7 @@ export class ResourceTimingCollector
             const domNodes = Math.round(getMetric('Nodes'));
             const jsEventListeners = Math.round(getMetric('JSEventListeners'));
 
-            // Получаем Resource Timing через Performance API
+
             const resourceEntries = await page.evaluate(() => {
                 const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
                 return entries.map(entry => ({
@@ -247,22 +247,22 @@ export class ResourceTimingCollector
                 }));
             }) as ResourceEntry[];
 
-            // Фильтруем API запросы (fetch, xmlhttprequest)
+
             const apiEntries = resourceEntries.filter(
                 e => e.initiatorType === 'fetch' || e.initiatorType === 'xmlhttprequest'
             );
 
-            // Фильтруем скрипты
+
             const scriptEntries = resourceEntries.filter(
                 e => e.initiatorType === 'script'
             );
 
-            // Фильтруем CSS
+
             const cssEntries = resourceEntries.filter(
                 e => e.initiatorType === 'css' || e.initiatorType === 'link'
             );
 
-            // Вычисляем статистику
+
             const apiDurations = apiEntries.map(e => e.duration);
             const totalApiDurationMs = apiDurations.reduce((a, b) => a + b, 0);
             const avgApiDurationMs = apiDurations.length > 0
@@ -272,7 +272,7 @@ export class ResourceTimingCollector
                 ? Math.max(...apiDurations)
                 : 0;
 
-            // Детали API (топ-10 по длительности)
+
             const apiDetails = apiEntries
                 .sort((a, b) => b.duration - a.duration)
                 .slice(0, 10)
@@ -286,7 +286,7 @@ export class ResourceTimingCollector
             const cssTotalSize = cssEntries.reduce((sum, e) => sum + e.transferSize, 0);
             const totalTransferSize = resourceEntries.reduce((sum, e) => sum + e.transferSize, 0);
 
-            // Расчёт heap usage %
+
             const heapUsagePercent = jsHeapTotalSize > 0
                 ? Math.round((jsHeapUsedSize / jsHeapTotalSize) * 100)
                 : 0;

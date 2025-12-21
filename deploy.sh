@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# === Metrics Service Deploy Script ===
-# Usage: SSH_IDENTITY=~/.ssh/id_ed25519_spark_selectel ./deploy.sh
-
-# === конфиг ===
 SSH_HOST="${SSH_HOST:-91.186.212.172}"
 SSH_USER="${SSH_USER:-root}"
 SSH_PORT="${SSH_PORT:-22}"
@@ -12,7 +8,6 @@ SSH_IDENTITY="${SSH_IDENTITY:-}"
 REMOTE_DIR="${REMOTE_DIR:-/root/metrics}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 
-# === ssh/scp опции ===
 SSH_OPTS=(-p "${SSH_PORT}" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=60 -o ServerAliveCountMax=10)
 SCP_OPTS=(-P "${SSH_PORT}" -o StrictHostKeyChecking=accept-new)
 [[ -n "${SSH_IDENTITY}" ]] && { SSH_OPTS+=(-i "${SSH_IDENTITY}"); SCP_OPTS+=(-i "${SSH_IDENTITY}"); }

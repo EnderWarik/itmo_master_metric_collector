@@ -72,7 +72,7 @@ export class TtfbMetricCollector
         }
       };
 
-      // Временные метки для каждой фазы
+
       let requestStartTime = 0;
       let dnsLookupTime = 0;
       let tcpConnectTime = 0;
@@ -88,16 +88,16 @@ export class TtfbMetricCollector
           method: 'GET',
           timeout: 10000,
           headers: {
-            'User-Agent': 'NIR3-Metrics/1.0 (+https://example.com)',
+            'User-Agent': 'NIR3-Metrics/1.0 (+https:
           },
         },
         (res) => {
-          // Время получения первого байта ответа (заголовки)
+
           firstByteTime = performance.now();
 
           const status = res.statusCode ?? null;
 
-          // Рассчитываем метрики
+
           const ttfbMs = Math.round(firstByteTime - requestStartTime);
 
           const timing: TtfbTimingBreakdown = {
@@ -111,7 +111,7 @@ export class TtfbMetricCollector
             ),
           };
 
-          // Обработка редиректов
+
           if (
             status &&
             status >= 300 &&
@@ -136,26 +136,26 @@ export class TtfbMetricCollector
         },
       );
 
-      // Отслеживаем события сокета для детального тайминга
+
       req.on('socket', (socket) => {
-        // DNS lookup завершён
+
         socket.on('lookup', () => {
           dnsLookupTime = performance.now();
         });
 
-        // TCP соединение установлено
+
         socket.on('connect', () => {
           tcpConnectTime = performance.now();
         });
 
-        // TLS handshake завершён (только для HTTPS)
+
         socket.on('secureConnect', () => {
           tlsHandshakeTime = performance.now();
         });
 
-        // Если сокет уже подключён (keep-alive переиспользование)
+
         if (socket.connecting === false) {
-          // Сокет уже готов, пропускаем DNS и TCP фазы
+
           const now = performance.now();
           if (!dnsLookupTime) dnsLookupTime = now;
           if (!tcpConnectTime) tcpConnectTime = now;
@@ -171,7 +171,7 @@ export class TtfbMetricCollector
         const now = performance.now();
         const ttfbMs = Math.round(now - requestStartTime);
 
-        // Заполняем пустые значения текущим временем для расчёта
+
         if (!dnsLookupTime) dnsLookupTime = requestStartTime;
         if (!tcpConnectTime) tcpConnectTime = dnsLookupTime;
         if (!tlsHandshakeTime) tlsHandshakeTime = tcpConnectTime;
@@ -193,7 +193,7 @@ export class TtfbMetricCollector
         });
       });
 
-      // Засекаем время и отправляем запрос
+
       requestStartTime = performance.now();
       req.end();
     });

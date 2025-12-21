@@ -43,7 +43,7 @@ const props = defineProps<{
 
 import { computed } from 'vue';
 
-// SVG chart dimensions
+
 const chartWidth = 400;
 const chartHeight = 100;
 const chartPadding = 20;
@@ -82,7 +82,7 @@ const fpsChartArea = computed(() => {
   return `${startX},${bottomY} ${points.join(' ')} ${endX},${bottomY}`;
 });
 
-// Heap chart computeds
+
 const heapChartPath = computed(() => {
   if (!props.result?.heapTimeline?.length) return '';
   const timeline = props.result.heapTimeline;
@@ -121,11 +121,11 @@ function getHeapClass(percent: number): string {
   return 'poor';
 }
 
-// Generate fixed time labels for X-axis (1s, 2s, 3s, ...)
+
 const timeLabels = computed(() => {
   if (!props.result?.fpsTimeline?.length) return [];
   const maxTime = Math.max(...props.result.fpsTimeline.map(p => p.timeMs));
-  const maxSeconds = Math.floor(maxTime / 1000); // Только полные секунды
+  const maxSeconds = Math.floor(maxTime / 1000);
   const labels: { second: number; x: number }[] = [];
   
   for (let s = 1; s <= maxSeconds; s++) {
@@ -136,11 +136,11 @@ const timeLabels = computed(() => {
   return labels;
 });
 
-// Generate fixed time labels for heap chart X-axis
+
 const heapTimeLabels = computed(() => {
   if (!props.result?.heapTimeline?.length) return [];
   const maxTime = Math.max(...props.result.heapTimeline.map(p => p.time));
-  const maxSeconds = Math.floor(maxTime / 1000); // Только полные секунды
+  const maxSeconds = Math.floor(maxTime / 1000);
   const labels: { second: number; x: number }[] = [];
   
   for (let s = 1; s <= maxSeconds; s++) {

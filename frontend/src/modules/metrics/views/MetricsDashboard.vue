@@ -19,18 +19,18 @@ const {
   collectAll,
 } = useMetricRunner();
 
-// Tab state
+
 type TabType = 'metrics' | 'e2e';
 const activeTab = ref<TabType>('metrics');
 
-// E2E state for main metrics tab
+
 const metricsE2EResult = ref<E2EResult | null>(null);
 const isMetricsE2ERunning = ref(false);
 
-// Pizza preset scenario
+
 const pizzaScenario: Scenario = {
   name: 'Заказ пиццы',
-  url: 'https://micro.pizza.ew-production.ru/',
+  url: 'https:
   steps: [
     { action: 'type', selector: 'input[name="pizza_name"]', value: 'my pizza', label: 'Ввод названия пиццы' },
     { action: 'click', selector: 'div[class*="result"] button', label: 'Клик Готовьте' },
@@ -44,13 +44,13 @@ const pizzaScenario: Scenario = {
 };
 
 async function handleCollect(payload: MetricFormPayload) {
-  // Reset E2E results
+
   metricsE2EResult.value = null;
   
-  // Run standard metrics
+
   collectAll({ url: payload.url });
   
-  // Run E2E if enabled
+
   if (payload.runE2E) {
     isMetricsE2ERunning.value = true;
     try {
@@ -75,7 +75,7 @@ async function handleCollect(payload: MetricFormPayload) {
   }
 }
 
-// E2E tab state
+
 const e2eResult = ref<E2EResult | null>(null);
 const isE2ERunning = ref(false);
 

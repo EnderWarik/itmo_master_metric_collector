@@ -61,10 +61,10 @@ interface ResourceTimingPayload {
   scriptDurationMs: number;
   scriptsCount: number;
   scriptsTotalSize: number;
-  // CSS Metrics
+
   cssCount: number;
   cssTotalSize: number;
-  // CDP Performance Metrics
+
   taskDurationMs: number;
   jsHeapUsedSize: number;
   jsHeapTotalSize: number;
@@ -75,21 +75,21 @@ interface ResourceTimingPayload {
   recalcStyleDurationMs: number;
   domNodes: number;
   jsEventListeners: number;
-  // GC Metrics
+
   gcCount: number;
   gcTotalDurationMs: number;
   gcMaxDurationMs: number;
-  // Coverage Metrics
+
   unusedJsPercent: number;
   unusedCssPercent: number;
   jsTotalBytes: number;
   jsUnusedBytes: number;
   cssTotalBytes: number;
   cssUnusedBytes: number;
-  // JS Parse/Compile Metrics
+
   jsParseMs: number;
   jsCompileMs: number;
-  // Network Metrics
+
   avgContentDownloadMs: number;
   maxContentDownloadMs: number;
   http2Percent: number;
@@ -98,7 +98,7 @@ interface ResourceTimingPayload {
   cacheHitCount: number;
   swUsed: boolean;
   swStartMs: number;
-  // MFE Comparison Metrics
+
   chunkedJsCount: number;
   largestChunkSize: number;
   uniqueDomains: number;
@@ -153,11 +153,11 @@ function getMainValue(result: MetricResult): number | null {
   const payload = result.payload as Record<string, unknown>;
   if (typeof payload.elapsedMs === 'number') return payload.elapsedMs;
   if (typeof payload.ttfbMs === 'number') return payload.ttfbMs;
-  // For DOM metrics, use totalMs as main value
+
   if (typeof payload.totalMs === 'number') return payload.totalMs;
-  // For Lighthouse, use speedIndexMs as main value
+
   if (typeof payload.speedIndexMs === 'number') return payload.speedIndexMs;
-  // For FPS, use avgFps as main value (not in ms, so return null to show custom display)
+
   if (typeof payload.avgFps === 'number') return null;
   return null;
 }

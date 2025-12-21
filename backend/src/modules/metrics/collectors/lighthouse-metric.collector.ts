@@ -42,7 +42,7 @@ export class LighthouseMetricCollector
         let chrome: chromeLauncher.LaunchedChrome | null = null;
 
         try {
-            // Запускаем Chrome
+
             const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
             chrome = await chromeLauncher.launch({
                 chromeFlags: [

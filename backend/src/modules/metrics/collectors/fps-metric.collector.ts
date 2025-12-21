@@ -69,13 +69,13 @@ export class FpsMetricCollector
             page = await this.browser!.newPage();
             await page.setViewport({ width: 1920, height: 1080 });
 
-            // Загружаем страницу
+
             await page.goto(url, { waitUntil: 'load', timeout: 30000 });
 
-            // Ждём немного чтобы страница "успокоилась"
+
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Измеряем FPS в течение 3 секунд
+
             const measurementDuration = 3000;
 
             const fpsData = await page.evaluate((duration: number) => {
@@ -101,7 +101,7 @@ export class FpsMetricCollector
                         frameCount++;
 
                         if (currentTime - startTime >= duration) {
-                            // Вычисляем FPS из времени между кадрами
+
                             const fpsValues = frameTimes
                                 .filter(t => t > 0)
                                 .map(t => 1000 / t);
@@ -133,7 +133,7 @@ export class FpsMetricCollector
                 });
             }, measurementDuration);
 
-            // Вычисляем dropped frames (при 60 FPS за 3 сек должно быть ~180 кадров)
+
             const expectedFrames = Math.round((fpsData.durationMs / 1000) * 60);
             const droppedFrames = Math.max(0, expectedFrames - fpsData.totalFrames);
             const droppedFramesPercent = Math.round((droppedFrames / expectedFrames) * 100);

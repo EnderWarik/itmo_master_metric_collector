@@ -21,10 +21,10 @@ export class E2EMetricCollector {
             await this.ensureBrowser();
             page = await this.browser!.newPage();
 
-            // Устанавливаем viewport
+
             await page.setViewport({ width: 1920, height: 1080 });
 
-            // Инжектим Long Tasks observer и FPS meter
+
             await page.evaluateOnNewDocument(() => {
                 (window as any).__longTasks = [];
                 (window as any).__longTasksObserver = new PerformanceObserver((list) => {
@@ -32,7 +32,7 @@ export class E2EMetricCollector {
                 });
                 (window as any).__longTasksObserver.observe({ type: 'longtask', buffered: true });
 
-                // Heap Usage измерение
+
                 (window as any).__heapMeter = {
                     running: false,
                     timeline: [] as { time: number; usedSize: number; totalSize: number; usagePercent: number }[],
@@ -43,7 +43,7 @@ export class E2EMetricCollector {
                         this.startTime = performance.now();
                         this.running = true;
                         this.measure();
-                        // Замер каждые 200мс
+
                         this.intervalId = setInterval(() => this.measure(), 200);
                     },
                     measure() {
@@ -75,7 +75,7 @@ export class E2EMetricCollector {
                     },
                 };
 
-                // FPS измерение
+
                 (window as any).__fpsMeter = {
                     frames: 0,
                     startTime: 0,
@@ -110,29 +110,29 @@ export class E2EMetricCollector {
                             minFps: fpsValues.length > 0 ? Math.round(Math.min(...fpsValues)) : 0,
                             totalFrames: this.frames,
                             durationMs: Math.round(duration),
-                            frameTimes: this.frameTimes.slice(), // Return copy of frameTimes for timeline
+                            frameTimes: this.frameTimes.slice(),
                         };
                     }
                 };
             });
 
-            // Переходим на страницу и ждём полной загрузки (networkidle0)
+
             this.logger.log(`Navigating to ${scenario.url}`);
             await page.goto(scenario.url, { waitUntil: 'networkidle0', timeout: 60000 });
 
-            // Дополнительно ждём 500мс для стабилизации страницы
+
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Запускаем FPS и Heap meters
+
             await page.evaluate(() => {
                 (window as any).__fpsMeter?.start();
                 (window as any).__heapMeter?.start();
             });
 
-            // Запоминаем время начала сценария (после загрузки страницы)
+
             const scenarioStartTime = Date.now();
 
-            // Выполняем каждый шаг
+
             for (let i = 0; i < scenario.steps.length; i++) {
                 const step = scenario.steps[i];
                 const stepResult = await this.executeStep(page, step, i);
@@ -143,23 +143,23 @@ export class E2EMetricCollector {
                 }
             }
 
-            // Время выполнения сценария (без загрузки страницы)
+
             const scenarioDurationMs = Date.now() - scenarioStartTime;
 
-            // Останавливаем FPS meter и получаем результаты
+
             const fpsResult = await page.evaluate(() => {
                 return (window as any).__fpsMeter?.stop() || { avgFps: 0, minFps: 0, totalFrames: 0, durationMs: 0, frameTimes: [] };
             });
 
-            // Останавливаем Heap meter и получаем результаты
+
             const heapResult = await page.evaluate(() => {
                 return (window as any).__heapMeter?.stop() || { timeline: [], avgUsagePercent: 0, maxUsagePercent: 0 };
             });
 
-            // Создаём fpsTimeline из frameTimes (группируем по 500мс интервалам)
+
             const fpsTimeline: { timeMs: number; fps: number }[] = [];
             if (fpsResult.frameTimes && fpsResult.frameTimes.length > 0) {
-                const intervalMs = 500; // 500мс интервалы
+                const intervalMs = 500;
                 let currentTime = 0;
                 let intervalFrames = 0;
                 let intervalStart = 0;
@@ -173,7 +173,7 @@ export class E2EMetricCollector {
                         const fps = Math.round((intervalFrames / intervalDuration) * 1000);
                         fpsTimeline.push({
                             timeMs: Math.round(currentTime),
-                            fps: Math.min(fps, 120), // Cap at 120 FPS
+                            fps: Math.min(fps, 120),
                         });
                         intervalStart = currentTime;
                         intervalFrames = 0;
@@ -181,7 +181,7 @@ export class E2EMetricCollector {
                 }
             }
 
-            // Собираем итоговые метрики
+
             const totalDurationMs = Date.now() - startTime;
             const totalLongTasks = stepMetrics.reduce((sum, s) => sum + s.longTasksCount, 0);
             const totalLongTasksMs = stepMetrics.reduce((sum, s) => sum + s.longTasksTotalMs, 0);
@@ -197,7 +197,7 @@ export class E2EMetricCollector {
                 ? Math.max(...inputDelays)
                 : 0;
 
-            // Вычисляем dropped frames (ожидаем 60 FPS)
+
             const expectedFrames = Math.round((fpsResult.durationMs / 1000) * 60);
             const droppedFrames = Math.max(0, expectedFrames - fpsResult.totalFrames);
 

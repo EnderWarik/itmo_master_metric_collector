@@ -1,4 +1,3 @@
-# Install Chrome dependencies for Puppeteer
 FROM node:20-slim AS base
 WORKDIR /app
 COPY package*.json ./
@@ -17,7 +16,6 @@ ENV NODE_ENV=production
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Install Chrome for Puppeteer
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \

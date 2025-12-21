@@ -105,7 +105,7 @@ export class DomMetricCollector
             try {
                 await this.browser.close();
             } catch {
-                // Ignore close errors
+
             }
             this.browser = null;
         }
@@ -161,31 +161,31 @@ export class DomMetricCollector
         try {
             page = await browser.newPage();
 
-            // Переходим на страницу и ждём полной загрузки (load event)
+
             await page.goto(url, {
                 waitUntil: 'load',
                 timeout: 30000,
             });
 
-            // Получаем метрики из Navigation Timing Level 2 API
+
             const metrics = await page.evaluate(() => {
                 const entries = performance.getEntriesByType('navigation');
                 if (!entries.length) return null;
 
                 const nav = entries[0] as PerformanceNavigationTiming;
 
-                // Определяем флаги переиспользования
+
                 const redirectMs = nav.redirectEnd - nav.redirectStart;
                 const dnsMs = nav.domainLookupEnd - nav.domainLookupStart;
                 const connectMs = nav.connectEnd - nav.connectStart;
 
-                // SSL time (только если был secureConnectionStart и он > 0)
+
                 const sslMs = nav.secureConnectionStart && nav.secureConnectionStart > 0
                     ? nav.connectEnd - nav.secureConnectionStart
                     : null;
 
                 return {
-                    // Фазы загрузки
+
                     redirectMs,
                     redirectHidden: redirectMs === 0 && nav.redirectCount > 0,
                     dnsMs,

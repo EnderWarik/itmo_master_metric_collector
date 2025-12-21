@@ -23,14 +23,14 @@ const emit = defineEmits<{
   (e: 'run-scenario', scenario: Scenario): void;
 }>();
 
-// URL для загрузки в iframe
+
 const targetUrl = ref('');
 const scenarioName = ref('Мой сценарий');
 const steps = ref<ScenarioStep[]>([]);
 const isRecording = ref(false);
 const iframeRef = ref<HTMLIFrameElement | null>(null);
 
-// Форма для добавления шага вручную
+
 const newStep = ref<ScenarioStep>({
   action: 'click',
   selector: '',
@@ -49,7 +49,7 @@ function addStep() {
   
   steps.value.push({ ...newStep.value });
   
-  // Сбрасываем форму
+
   newStep.value = {
     action: 'click',
     selector: '',
@@ -115,7 +115,7 @@ function importScenario(event: Event) {
 
 function loadPresetPizzaScenario() {
   scenarioName.value = 'Заказ пиццы';
-  targetUrl.value = 'https://micro.pizza.ew-production.ru/';
+  targetUrl.value = 'https:
   steps.value = [
     { action: 'type', selector: 'input[name="pizza_name"]', value: 'my pizza', label: 'Ввод названия пиццы' },
     { action: 'click', selector: 'div[class*="result"] button', label: 'Клик Готовьте' },
@@ -162,7 +162,7 @@ const actionLabels: Record<ScenarioAction, string> = {
       </div>
       <div class="form-group">
         <label>URL страницы</label>
-        <input v-model="targetUrl" type="url" placeholder="https://example.com">
+        <input v-model="targetUrl" type="url" placeholder="https:
       </div>
     </div>
 

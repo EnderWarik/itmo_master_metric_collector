@@ -1,12 +1,16 @@
+<script setup lang="ts">
+import { useRoute } from 'vue-router';
+const route = useRoute();
+</script>
+
 <template>
   <div class="shell">
     <header class="shell__header">
       <p class="shell__eyebrow">NIR3 Metrics Lab</p>
-      <h1 class="shell__title">Замер метрик по URL</h1>
-      <p class="shell__subtitle">
-        Вставляй ссылку и запускай нужные измерения. Будем наращивать список
-        доступных метрик шаг за шагом.
-      </p>
+      <nav class="shell__nav">
+        <router-link to="/" class="nav-link" :class="{ active: route.path === '/' }">Замер</router-link>
+        <router-link to="/compare" class="nav-link" :class="{ active: route.path === '/compare' }">Сравнение</router-link>
+      </nav>
     </header>
     <main class="shell__main">
       <slot />
@@ -40,10 +44,29 @@
   color: #0f172a;
 }
 
-.shell__subtitle {
-  margin: 0.75rem auto 0;
-  max-width: 640px;
+.shell__nav {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.nav-link {
+  padding: 0.6rem 1.5rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
   color: #475569;
+  background: #f1f5f9;
+  transition: all 0.2s;
+}
+
+.nav-link:hover { background: #e2e8f0; }
+
+.nav-link.active {
+  background: #4f46e5;
+  color: white;
 }
 
 .shell__main {

@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 580" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg7" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8ECF1"/>
+    </linearGradient>
+    <marker id="arr7" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#7F8C8D"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="580" fill="url(#bg7)" rx="12"/>
+
+  <text x="450" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">E2E Scenario Metrics</text>
+  <text x="450" y="50" text-anchor="middle" font-size="12" fill="#7F8C8D">Puppeteer + PerformanceObserver + requestAnimationFrame</text>
+
+  <!-- Scenario flow -->
+  <text x="30" y="80" font-size="14" font-weight="bold" fill="#2C3E50">Scenario Execution Flow:</text>
+
+  <!-- Page Load -->
+  <rect x="30" y="90" width="110" height="45" rx="8" fill="#3498DB"/>
+  <text x="85" y="110" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Page Load</text>
+  <text x="85" y="125" text-anchor="middle" font-size="8" fill="#D6EAF8">networkidle0</text>
+
+  <line x1="145" y1="112" x2="165" y2="112" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr7)"/>
+
+  <!-- Stabilize -->
+  <rect x="170" y="90" width="80" height="45" rx="8" fill="#95A5A6"/>
+  <text x="210" y="110" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Wait</text>
+  <text x="210" y="125" text-anchor="middle" font-size="8" fill="#ECF0F1">500ms</text>
+
+  <line x1="255" y1="112" x2="275" y2="112" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr7)"/>
+
+  <!-- Inject observers -->
+  <rect x="280" y="90" width="110" height="45" rx="8" fill="#9B59B6"/>
+  <text x="335" y="110" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Inject</text>
+  <text x="335" y="125" text-anchor="middle" font-size="8" fill="#E8DAEF">Observers + FPS</text>
+
+  <line x1="395" y1="112" x2="415" y2="112" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr7)"/>
+
+  <!-- Steps -->
+  <rect x="420" y="90" width="90" height="45" rx="8" fill="#E67E22"/>
+  <text x="465" y="110" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Step 1</text>
+  <text x="465" y="125" text-anchor="middle" font-size="8" fill="#FDEBD0">click</text>
+
+  <line x1="515" y1="112" x2="535" y2="112" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr7)"/>
+
+  <rect x="540" y="90" width="90" height="45" rx="8" fill="#E67E22"/>
+  <text x="585" y="110" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Step 2</text>
+  <text x="585" y="125" text-anchor="middle" font-size="8" fill="#FDEBD0">type</text>
+
+  <line x1="635" y1="112" x2="655" y2="112" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr7)"/>
+
+  <rect x="660" y="90" width="90" height="45" rx="8" fill="#E67E22"/>
+  <text x="705" y="110" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Step N</text>
+  <text x="705" y="125" text-anchor="middle" font-size="8" fill="#FDEBD0">scroll</text>
+
+  <line x1="755" y1="112" x2="775" y2="112" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr7)"/>
+
+  <!-- Collect -->
+  <rect x="780" y="90" width="100" height="45" rx="8" fill="#2ECC71"/>
+  <text x="830" y="110" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Collect</text>
+  <text x="830" y="125" text-anchor="middle" font-size="8" fill="#D5F5E3">Results</text>
+
+  <!-- Per-step metrics -->
+  <text x="30" y="170" font-size="14" font-weight="bold" fill="#2C3E50">Per-Step Metrics:</text>
+
+  <rect x="30" y="180" width="410" height="130" rx="10" fill="white" stroke="#E67E22" stroke-width="2"/>
+
+  <g transform="translate(40, 200)" font-size="11">
+    <circle cx="5" cy="0" r="4" fill="#E67E22"/>
+    <text x="15" y="4" fill="#2C3E50" font-weight="bold">inputDelayMs</text>
+    <text x="140" y="4" fill="#555">= time to find &amp; prepare element</text>
+
+    <circle cx="5" cy="22" r="4" fill="#E67E22"/>
+    <text x="15" y="26" fill="#2C3E50" font-weight="bold">actionDurationMs</text>
+    <text x="155" y="26" fill="#555">= total action execution time</text>
+
+    <circle cx="5" cy="44" r="4" fill="#E74C3C"/>
+    <text x="15" y="48" fill="#2C3E50" font-weight="bold">longTasksCount</text>
+    <text x="140" y="48" fill="#555">= Long Tasks (&#x003E;50ms) during step</text>
+
+    <circle cx="5" cy="66" r="4" fill="#E74C3C"/>
+    <text x="15" y="70" fill="#2C3E50" font-weight="bold">longTasksTotalMs</text>
+    <text x="150" y="70" fill="#555">= sum of all Long Task durations</text>
+
+    <circle cx="5" cy="88" r="4" fill="#2ECC71"/>
+    <text x="15" y="92" fill="#2C3E50" font-weight="bold">success</text>
+    <text x="75" y="92" fill="#555">= step completed without error</text>
+  </g>
+
+  <!-- Long Tasks visualization -->
+  <rect x="460" y="180" width="420" height="130" rx="10" fill="white" stroke="#E74C3C" stroke-width="2"/>
+  <text x="670" y="200" text-anchor="middle" font-size="12" font-weight="bold" fill="#E74C3C">Long Tasks During Step</text>
+
+  <g transform="translate(475, 210)">
+    <!-- Main thread timeline -->
+    <rect x="0" y="20" width="390" height="20" rx="3" fill="#ECF0F1"/>
+
+    <!-- Normal tasks -->
+    <rect x="0" y="20" width="30" height="20" rx="2" fill="#2ECC71" opacity="0.7"/>
+    <rect x="35" y="20" width="20" height="20" rx="2" fill="#2ECC71" opacity="0.7"/>
+
+    <!-- Long task -->
+    <rect x="60" y="20" width="100" height="20" rx="2" fill="#E74C3C" opacity="0.8"/>
+    <text x="110" y="34" text-anchor="middle" font-size="8" fill="white" font-weight="bold">120ms Long Task</text>
+
+    <!-- Blocking portion -->
+    <rect x="85" y="45" width="75" height="12" rx="2" fill="#E74C3C" opacity="0.3"/>
+    <text x="122" y="55" text-anchor="middle" font-size="7" fill="#E74C3C">70ms blocking (120-50)</text>
+
+    <!-- Normal -->
+    <rect x="165" y="20" width="25" height="20" rx="2" fill="#2ECC71" opacity="0.7"/>
+
+    <!-- Another long task -->
+    <rect x="195" y="20" width="70" height="20" rx="2" fill="#E74C3C" opacity="0.8"/>
+    <text x="230" y="34" text-anchor="middle" font-size="8" fill="white" font-weight="bold">80ms</text>
+
+    <rect x="280" y="20" width="30" height="20" rx="2" fill="#2ECC71" opacity="0.7"/>
+    <rect x="315" y="20" width="20" height="20" rx="2" fill="#2ECC71" opacity="0.7"/>
+
+    <!-- 50ms threshold line -->
+    <line x1="0" y1="15" x2="390" y2="15" stroke="#E74C3C" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="395" y="18" font-size="8" fill="#E74C3C">50ms threshold</text>
+
+    <text x="0" y="10" font-size="8" fill="#7F8C8D">Main Thread</text>
+
+    <text x="0" y="80" font-size="9" fill="#555">longTasksCount = 2 | longTasksTotalMs = 200ms</text>
+  </g>
+
+  <!-- FPS Timeline -->
+  <text x="30" y="340" font-size="14" font-weight="bold" fill="#2C3E50">FPS Timeline During Scenario:</text>
+
+  <rect x="30" y="350" width="410" height="100" rx="10" fill="white" stroke="#3498DB" stroke-width="1"/>
+
+  <g transform="translate(50, 370)">
+    <!-- FPS chart simplified -->
+    <line x1="0" y1="0" x2="0" y2="65" stroke="#BDC3C7" stroke-width="1"/>
+    <line x1="0" y1="65" x2="370" y2="65" stroke="#BDC3C7" stroke-width="1"/>
+
+    <text x="-10" y="5" text-anchor="end" font-size="8" fill="#999">60</text>
+    <text x="-10" y="25" text-anchor="end" font-size="8" fill="#999">40</text>
+    <text x="-10" y="45" text-anchor="end" font-size="8" fill="#999">20</text>
+    <text x="-10" y="65" text-anchor="end" font-size="8" fill="#999">0</text>
+
+    <!-- FPS line -->
+    <polyline points="0,5 30,5 60,8 90,5 120,25 150,40 180,30 210,15 240,5 270,5 300,10 330,5 360,5"
+              fill="none" stroke="#3498DB" stroke-width="2"/>
+
+    <!-- Threshold lines -->
+    <line x1="0" y1="8" x2="370" y2="8" stroke="#2ECC71" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="375" y="11" font-size="7" fill="#2ECC71">55fps</text>
+
+    <line x1="0" y1="33" x2="370" y2="33" stroke="#E74C3C" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="375" y="36" font-size="7" fill="#E74C3C">30fps</text>
+
+    <!-- Step markers -->
+    <line x1="100" y1="0" x2="100" y2="65" stroke="#E67E22" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="100" y="75" text-anchor="middle" font-size="7" fill="#E67E22">click</text>
+
+    <line x1="200" y1="0" x2="200" y2="65" stroke="#E67E22" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="200" y="75" text-anchor="middle" font-size="7" fill="#E67E22">type</text>
+
+    <text x="185" y="-5" font-size="9" fill="#2C3E50" font-weight="bold">fpsTimeline (every 500ms)</text>
+  </g>
+
+  <!-- Heap Timeline -->
+  <rect x="460" y="350" width="420" height="100" rx="10" fill="white" stroke="#9B59B6" stroke-width="1"/>
+
+  <g transform="translate(480, 370)">
+    <line x1="0" y1="0" x2="0" y2="65" stroke="#BDC3C7" stroke-width="1"/>
+    <line x1="0" y1="65" x2="380" y2="65" stroke="#BDC3C7" stroke-width="1"/>
+
+    <text x="-10" y="5" text-anchor="end" font-size="8" fill="#999">100%</text>
+    <text x="-10" y="25" text-anchor="end" font-size="8" fill="#999">75%</text>
+    <text x="-10" y="45" text-anchor="end" font-size="8" fill="#999">50%</text>
+
+    <!-- Heap line - gradually increasing -->
+    <polyline points="0,45 40,43 80,40 120,35 160,32 200,28 240,25 280,22 320,20 360,18"
+              fill="none" stroke="#9B59B6" stroke-width="2"/>
+
+    <!-- 80% threshold -->
+    <line x1="0" y1="13" x2="380" y2="13" stroke="#E74C3C" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="385" y="16" font-size="7" fill="#E74C3C">80%</text>
+
+    <text x="190" y="-5" font-size="9" fill="#2C3E50" font-weight="bold">heapTimeline (every 200ms)</text>
+    <text x="190" y="78" text-anchor="middle" font-size="8" fill="#7F8C8D">performance.memory (Chrome only)</text>
+  </g>
+
+  <!-- Aggregated metrics -->
+  <text x="30" y="480" font-size="14" font-weight="bold" fill="#2C3E50">Aggregated Scenario Metrics:</text>
+
+  <g transform="translate(30, 490)" font-size="10">
+    <rect x="0" y="0" width="200" height="25" rx="5" fill="#D6EAF8"/>
+    <text x="10" y="17" fill="#2471A3" font-weight="bold">totalDurationMs (with load)</text>
+
+    <rect x="210" y="0" width="200" height="25" rx="5" fill="#D6EAF8"/>
+    <text x="220" y="17" fill="#2471A3" font-weight="bold">scenarioDurationMs (steps only)</text>
+
+    <rect x="420" y="0" width="220" height="25" rx="5" fill="#FADBD8"/>
+    <text x="430" y="17" fill="#CB4335" font-weight="bold">totalLongTasks / totalLongTasksMs</text>
+
+    <rect x="650" y="0" width="230" height="25" rx="5" fill="#FEF9E7"/>
+    <text x="660" y="17" fill="#B7950B" font-weight="bold">avgInputDelayMs / maxInputDelayMs</text>
+  </g>
+
+  <!-- Input delay thresholds -->
+  <g transform="translate(30, 530)">
+    <text x="0" y="12" font-size="11" font-weight="bold" fill="#2C3E50">Thresholds:</text>
+
+    <rect x="100" y="0" width="150" height="25" rx="5" fill="#27AE60" opacity="0.15"/>
+    <rect x="100" y="0" width="4" height="25" rx="2" fill="#27AE60"/>
+    <text x="115" y="17" font-size="10" fill="#27AE60" font-weight="bold">Input &#x003C;100ms Good</text>
+
+    <rect x="260" y="0" width="200" height="25" rx="5" fill="#F39C12" opacity="0.15"/>
+    <rect x="260" y="0" width="4" height="25" rx="2" fill="#F39C12"/>
+    <text x="275" y="17" font-size="10" fill="#F39C12" font-weight="bold">100-300ms Needs Improvement</text>
+
+    <rect x="470" y="0" width="150" height="25" rx="5" fill="#E74C3C" opacity="0.15"/>
+    <rect x="470" y="0" width="4" height="25" rx="2" fill="#E74C3C"/>
+    <text x="485" y="17" font-size="10" fill="#E74C3C" font-weight="bold">Input &#x003E;300ms Poor</text>
+
+    <rect x="640" y="0" width="240" height="25" rx="5" fill="#2C3E50" opacity="0.08"/>
+    <text x="650" y="17" font-size="10" fill="#555">FPS: &#x2265;55 good | 30-54 med | &#x003C;30 poor</text>
+  </g>
+</svg>

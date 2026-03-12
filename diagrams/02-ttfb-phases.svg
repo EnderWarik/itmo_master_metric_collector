@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8ECF1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="480" fill="url(#bg2)" rx="12"/>
+
+  <text x="450" y="35" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">Time To First Byte (TTFB) - Декомпозиция фаз</text>
+  <text x="450" y="55" text-anchor="middle" font-size="13" fill="#7F8C8D">Node.js HTTP/HTTPS socket events</text>
+
+  <!-- Phase bars -->
+  <!-- DNS -->
+  <rect x="40" y="85" width="120" height="50" rx="8" fill="#3498DB"/>
+  <text x="100" y="107" text-anchor="middle" font-size="13" fill="white" font-weight="bold">DNS</text>
+  <text x="100" y="123" text-anchor="middle" font-size="10" fill="#D6EAF8">Lookup</text>
+
+  <!-- TCP -->
+  <rect x="170" y="85" width="120" height="50" rx="8" fill="#2ECC71"/>
+  <text x="230" y="107" text-anchor="middle" font-size="13" fill="white" font-weight="bold">TCP</text>
+  <text x="230" y="123" text-anchor="middle" font-size="10" fill="#D5F5E3">Handshake</text>
+
+  <!-- TLS -->
+  <rect x="300" y="85" width="120" height="50" rx="8" fill="#9B59B6"/>
+  <text x="360" y="107" text-anchor="middle" font-size="13" fill="white" font-weight="bold">TLS</text>
+  <text x="360" y="123" text-anchor="middle" font-size="10" fill="#E8DAEF">Handshake</text>
+
+  <!-- Request TX -->
+  <rect x="430" y="85" width="100" height="50" rx="8" fill="#E67E22"/>
+  <text x="480" y="107" text-anchor="middle" font-size="13" fill="white" font-weight="bold">Request</text>
+  <text x="480" y="123" text-anchor="middle" font-size="10" fill="#FDEBD0">TX</text>
+
+  <!-- Server Processing -->
+  <rect x="540" y="85" width="160" height="50" rx="8" fill="#E74C3C"/>
+  <text x="620" y="107" text-anchor="middle" font-size="13" fill="white" font-weight="bold">Server</text>
+  <text x="620" y="123" text-anchor="middle" font-size="10" fill="#FADBD8">Processing</text>
+
+  <!-- First Byte -->
+  <rect x="710" y="85" width="150" height="50" rx="8" fill="#1ABC9C"/>
+  <text x="785" y="107" text-anchor="middle" font-size="13" fill="white" font-weight="bold">First Byte</text>
+  <text x="785" y="123" text-anchor="middle" font-size="10" fill="#D1F2EB">Received</text>
+
+  <!-- TTFB bracket -->
+  <line x1="40" y1="145" x2="40" y2="160" stroke="#2C3E50" stroke-width="2"/>
+  <line x1="860" y1="145" x2="860" y2="160" stroke="#2C3E50" stroke-width="2"/>
+  <line x1="40" y1="155" x2="860" y2="155" stroke="#2C3E50" stroke-width="2"/>
+  <text x="450" y="175" text-anchor="middle" font-size="16" font-weight="bold" fill="#2C3E50">TTFB = dnsMs + tcpMs + tlsMs + requestMs + serverMs</text>
+
+  <!-- Socket events timeline -->
+  <text x="40" y="210" font-size="14" font-weight="bold" fill="#2C3E50">Socket Events (Node.js):</text>
+
+  <line x1="40" y1="230" x2="860" y2="230" stroke="#BDC3C7" stroke-width="2"/>
+
+  <!-- Event markers -->
+  <circle cx="40" cy="230" r="6" fill="#3498DB"/>
+  <text x="40" y="255" text-anchor="middle" font-size="9" fill="#3498DB" font-weight="bold">socket</text>
+  <text x="40" y="267" text-anchor="middle" font-size="8" fill="#7F8C8D">assigned</text>
+
+  <circle cx="170" cy="230" r="6" fill="#3498DB"/>
+  <text x="170" y="255" text-anchor="middle" font-size="9" fill="#3498DB" font-weight="bold">'lookup'</text>
+  <text x="170" y="267" text-anchor="middle" font-size="8" fill="#7F8C8D">DNS done</text>
+
+  <circle cx="300" cy="230" r="6" fill="#2ECC71"/>
+  <text x="300" y="255" text-anchor="middle" font-size="9" fill="#2ECC71" font-weight="bold">'connect'</text>
+  <text x="300" y="267" text-anchor="middle" font-size="8" fill="#7F8C8D">TCP done</text>
+
+  <circle cx="430" cy="230" r="6" fill="#9B59B6"/>
+  <text x="430" y="255" text-anchor="middle" font-size="9" fill="#9B59B6" font-weight="bold">'secureConnect'</text>
+  <text x="430" y="267" text-anchor="middle" font-size="8" fill="#7F8C8D">TLS done</text>
+
+  <circle cx="620" cy="230" r="6" fill="#E67E22"/>
+  <text x="620" y="255" text-anchor="middle" font-size="9" fill="#E67E22" font-weight="bold">'finish'</text>
+  <text x="620" y="267" text-anchor="middle" font-size="8" fill="#7F8C8D">Request sent</text>
+
+  <circle cx="860" cy="230" r="6" fill="#E74C3C"/>
+  <text x="860" y="255" text-anchor="middle" font-size="9" fill="#E74C3C" font-weight="bold">'response'</text>
+  <text x="860" y="267" text-anchor="middle" font-size="8" fill="#7F8C8D">First byte</text>
+
+  <!-- Formulas -->
+  <text x="40" y="300" font-size="14" font-weight="bold" fill="#2C3E50">Formulas:</text>
+
+  <rect x="40" y="310" width="250" height="30" rx="5" fill="#D6EAF8"/>
+  <text x="55" y="330" font-size="11" fill="#2471A3">dnsLookupMs = lookup - socketAssigned</text>
+
+  <rect x="310" y="310" width="250" height="30" rx="5" fill="#D5F5E3"/>
+  <text x="325" y="330" font-size="11" fill="#1E8449">tcpConnectMs = connect - lookup</text>
+
+  <rect x="580" y="310" width="280" height="30" rx="5" fill="#E8DAEF"/>
+  <text x="595" y="330" font-size="11" fill="#7D3C98">tlsHandshakeMs = secureConnect - connect</text>
+
+  <rect x="40" y="350" width="280" height="30" rx="5" fill="#FDEBD0"/>
+  <text x="55" y="370" font-size="11" fill="#CA6F1E">serverProcessingMs = response - finish</text>
+
+  <rect x="340" y="350" width="350" height="30" rx="5" fill="#FADBD8"/>
+  <text x="355" y="370" font-size="11" fill="#CB4335">ttfbMs = dns + tcp + tls + server = response - socket</text>
+
+  <!-- Thresholds -->
+  <text x="40" y="410" font-size="14" font-weight="bold" fill="#2C3E50">Thresholds (web.dev, 75th percentile):</text>
+
+  <rect x="40" y="420" width="200" height="35" rx="6" fill="#27AE60" opacity="0.15"/>
+  <rect x="40" y="420" width="5" height="35" rx="2" fill="#27AE60"/>
+  <text x="55" y="443" font-size="13" fill="#27AE60" font-weight="bold">&lt; 800ms Good</text>
+
+  <rect x="280" y="420" width="260" height="35" rx="6" fill="#F39C12" opacity="0.15"/>
+  <rect x="280" y="420" width="5" height="35" rx="2" fill="#F39C12"/>
+  <text x="295" y="443" font-size="13" fill="#F39C12" font-weight="bold">800-1800ms Needs Improvement</text>
+
+  <rect x="580" y="420" width="200" height="35" rx="6" fill="#E74C3C" opacity="0.15"/>
+  <rect x="580" y="420" width="5" height="35" rx="2" fill="#E74C3C"/>
+  <text x="595" y="443" font-size="13" fill="#E74C3C" font-weight="bold">&gt; 1800ms Poor</text>
+</svg>

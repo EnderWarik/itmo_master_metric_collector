@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8ECF1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="550" fill="url(#bg4)" rx="12"/>
+
+  <text x="450" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">Lighthouse Performance Metrics</text>
+
+  <!-- Pie chart - weights -->
+  <g transform="translate(160, 190)">
+    <!-- TBT 30% = 108deg -->
+    <path d="M0,0 L0,-120 A120,120 0 0,1 103.9,60 Z" fill="#E74C3C"/>
+    <!-- CLS 25% = 90deg from 108 -->
+    <path d="M0,0 L103.9,60 A120,120 0 0,1 -103.9,60 Z" fill="#9B59B6"/>
+    <!-- LCP 25% = 90deg from 198 -->
+    <path d="M0,0 L-103.9,60 A120,120 0 0,1 -103.9,-60 Z" fill="#3498DB"/>
+    <!-- SI 10% = 36deg from 288 -->
+    <path d="M0,0 L-103.9,-60 A120,120 0 0,1 -41.6,-112.6 Z" fill="#F39C12"/>
+    <!-- FCP 10% = 36deg from 324 -->
+    <path d="M0,0 L-41.6,-112.6 A120,120 0 0,1 0,-120 Z" fill="#2ECC71"/>
+
+    <!-- Labels on pie -->
+    <text x="35" y="-40" text-anchor="middle" font-size="13" fill="white" font-weight="bold">TBT</text>
+    <text x="35" y="-25" text-anchor="middle" font-size="11" fill="white">30%</text>
+
+    <text x="35" y="65" text-anchor="middle" font-size="13" fill="white" font-weight="bold">CLS</text>
+    <text x="35" y="80" text-anchor="middle" font-size="11" fill="white">25%</text>
+
+    <text x="-65" y="10" text-anchor="middle" font-size="13" fill="white" font-weight="bold">LCP</text>
+    <text x="-65" y="25" text-anchor="middle" font-size="11" fill="white">25%</text>
+
+    <text x="-55" y="-75" text-anchor="middle" font-size="10" fill="white" font-weight="bold">SI 10%</text>
+
+    <text x="-10" y="-95" text-anchor="middle" font-size="10" fill="white" font-weight="bold">FCP 10%</text>
+  </g>
+
+  <text x="160" y="330" text-anchor="middle" font-size="12" fill="#7F8C8D">Performance Score Weights</text>
+  <text x="160" y="347" text-anchor="middle" font-size="10" fill="#95A5A6">Log-normal CDF scoring curve</text>
+
+  <!-- Metric cards -->
+  <g transform="translate(340, 60)">
+    <!-- FCP -->
+    <rect x="0" y="0" width="240" height="70" rx="8" fill="white" stroke="#2ECC71" stroke-width="2"/>
+    <circle cx="20" cy="20" r="8" fill="#2ECC71"/>
+    <text x="35" y="24" font-size="13" fill="#2C3E50" font-weight="bold">First Contentful Paint (FCP)</text>
+    <text x="20" y="42" font-size="10" fill="#555">First content rendered on screen</text>
+    <text x="20" y="57" font-size="10" fill="#27AE60">Good: &#x2264;1.8s | Poor: &#x003E;3.0s</text>
+
+    <rect x="270" y="0" width="240" height="70" rx="8" fill="white" stroke="#3498DB" stroke-width="2"/>
+    <circle cx="290" cy="20" r="8" fill="#3498DB"/>
+    <text x="305" y="24" font-size="13" fill="#2C3E50" font-weight="bold">Largest Contentful Paint (LCP)</text>
+    <text x="290" y="42" font-size="10" fill="#555">Largest visible element rendered</text>
+    <text x="290" y="57" font-size="10" fill="#2980B9">Good: &#x2264;2.5s | Poor: &#x003E;4.0s</text>
+
+    <!-- Speed Index -->
+    <rect x="0" y="85" width="240" height="70" rx="8" fill="white" stroke="#F39C12" stroke-width="2"/>
+    <circle cx="20" cy="105" r="8" fill="#F39C12"/>
+    <text x="35" y="109" font-size="13" fill="#2C3E50" font-weight="bold">Speed Index (SI)</text>
+    <text x="20" y="127" font-size="10" fill="#555">Visual completeness speed</text>
+    <text x="20" y="142" font-size="10" fill="#E67E22">Good: &#x2264;3.4s | Poor: &#x003E;5.8s</text>
+
+    <!-- TTI -->
+    <rect x="270" y="85" width="240" height="70" rx="8" fill="white" stroke="#95A5A6" stroke-width="2" stroke-dasharray="5,3"/>
+    <circle cx="290" cy="105" r="8" fill="#95A5A6"/>
+    <text x="305" y="109" font-size="13" fill="#95A5A6" font-weight="bold">Time to Interactive (TTI)</text>
+    <text x="290" y="127" font-size="10" fill="#95A5A6">5s quiet window after FCP</text>
+    <text x="290" y="142" font-size="10" fill="#95A5A6">REMOVED from scoring (v10)</text>
+
+    <!-- TBT -->
+    <rect x="0" y="170" width="240" height="70" rx="8" fill="white" stroke="#E74C3C" stroke-width="2"/>
+    <circle cx="20" cy="190" r="8" fill="#E74C3C"/>
+    <text x="35" y="194" font-size="13" fill="#2C3E50" font-weight="bold">Total Blocking Time (TBT)</text>
+    <text x="20" y="212" font-size="10" fill="#555">Sum of (longTask - 50ms) blocking</text>
+    <text x="20" y="227" font-size="10" fill="#C0392B">Good: &#x2264;200ms | Poor: &#x003E;600ms</text>
+
+    <!-- CLS -->
+    <rect x="270" y="170" width="240" height="70" rx="8" fill="white" stroke="#9B59B6" stroke-width="2"/>
+    <circle cx="290" cy="190" r="8" fill="#9B59B6"/>
+    <text x="305" y="194" font-size="13" fill="#2C3E50" font-weight="bold">Cumulative Layout Shift (CLS)</text>
+    <text x="290" y="212" font-size="10" fill="#555">impact_fraction x distance_fraction</text>
+    <text x="290" y="227" font-size="10" fill="#8E44AD">Good: &#x2264;0.1 | Poor: &#x003E;0.25</text>
+  </g>
+
+  <!-- TBT formula detail -->
+  <rect x="30" y="370" width="840" height="80" rx="10" fill="white" stroke="#E74C3C" stroke-width="1"/>
+  <text x="450" y="392" text-anchor="middle" font-size="14" font-weight="bold" fill="#E74C3C">TBT Formula (30% weight - most influential)</text>
+  <g transform="translate(50, 400)">
+    <rect x="0" y="5" width="80" height="30" rx="3" fill="#E74C3C" opacity="0.2"/>
+    <rect x="0" y="5" width="80" height="30" rx="3" fill="none" stroke="#E74C3C"/>
+    <text x="40" y="25" text-anchor="middle" font-size="10" fill="#E74C3C">250ms task</text>
+    <line x1="80" y1="20" x2="100" y2="20" stroke="#999" stroke-width="1"/>
+    <text x="140" y="25" text-anchor="middle" font-size="11" fill="#E74C3C" font-weight="bold">200ms blocking</text>
+    <text x="140" y="38" text-anchor="middle" font-size="9" fill="#999">(250 - 50 = 200)</text>
+
+    <rect x="250" y="5" width="55" height="30" rx="3" fill="#F39C12" opacity="0.2"/>
+    <rect x="250" y="5" width="55" height="30" rx="3" fill="none" stroke="#F39C12"/>
+    <text x="277" y="25" text-anchor="middle" font-size="10" fill="#F39C12">90ms</text>
+    <line x1="305" y1="20" x2="325" y2="20" stroke="#999" stroke-width="1"/>
+    <text x="370" y="25" text-anchor="middle" font-size="11" fill="#F39C12" font-weight="bold">40ms blocking</text>
+    <text x="370" y="38" text-anchor="middle" font-size="9" fill="#999">(90 - 50 = 40)</text>
+
+    <rect x="460" y="5" width="40" height="30" rx="3" fill="#2ECC71" opacity="0.2"/>
+    <rect x="460" y="5" width="40" height="30" rx="3" fill="none" stroke="#2ECC71"/>
+    <text x="480" y="25" text-anchor="middle" font-size="10" fill="#2ECC71">35ms</text>
+    <line x1="500" y1="20" x2="520" y2="20" stroke="#999" stroke-width="1"/>
+    <text x="560" y="25" text-anchor="middle" font-size="11" fill="#2ECC71" font-weight="bold">0ms</text>
+    <text x="560" y="38" text-anchor="middle" font-size="9" fill="#999">(not a long task)</text>
+
+    <text x="670" y="25" text-anchor="middle" font-size="14" fill="#2C3E50" font-weight="bold">TBT = 240ms</text>
+  </g>
+
+  <!-- CLS formula -->
+  <rect x="30" y="465" width="840" height="70" rx="10" fill="white" stroke="#9B59B6" stroke-width="1"/>
+  <text x="450" y="487" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">CLS Formula (session window approach)</text>
+  <text x="450" y="510" text-anchor="middle" font-size="12" fill="#555">shift_score = impact_fraction x distance_fraction</text>
+  <text x="450" y="527" text-anchor="middle" font-size="12" fill="#555">CLS = max( sum of shift_scores within each session window )</text>
+</svg>

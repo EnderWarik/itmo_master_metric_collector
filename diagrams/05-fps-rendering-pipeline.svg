@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8ECF1"/>
+    </linearGradient>
+    <marker id="arr5" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#7F8C8D"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="520" fill="url(#bg5)" rx="12"/>
+
+  <text x="450" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">FPS &amp; Browser Rendering Pipeline</text>
+  <text x="450" y="50" text-anchor="middle" font-size="12" fill="#7F8C8D">requestAnimationFrame + pixel pipeline</text>
+
+  <!-- Rendering Pipeline -->
+  <text x="30" y="80" font-size="14" font-weight="bold" fill="#2C3E50">Rendering Pipeline (per frame):</text>
+
+  <rect x="30" y="90" width="140" height="55" rx="8" fill="#3498DB"/>
+  <text x="100" y="112" text-anchor="middle" font-size="14" fill="white" font-weight="bold">JavaScript</text>
+  <text x="100" y="130" text-anchor="middle" font-size="9" fill="#D6EAF8">rAF, events, timers</text>
+
+  <line x1="175" y1="117" x2="195" y2="117" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <rect x="200" y="90" width="120" height="55" rx="8" fill="#9B59B6"/>
+  <text x="260" y="112" text-anchor="middle" font-size="14" fill="white" font-weight="bold">Style</text>
+  <text x="260" y="130" text-anchor="middle" font-size="9" fill="#E8DAEF">CSS matching</text>
+
+  <line x1="325" y1="117" x2="345" y2="117" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <rect x="350" y="90" width="120" height="55" rx="8" fill="#E67E22"/>
+  <text x="410" y="112" text-anchor="middle" font-size="14" fill="white" font-weight="bold">Layout</text>
+  <text x="410" y="130" text-anchor="middle" font-size="9" fill="#FDEBD0">position, size</text>
+
+  <line x1="475" y1="117" x2="495" y2="117" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <rect x="500" y="90" width="120" height="55" rx="8" fill="#E74C3C"/>
+  <text x="560" y="112" text-anchor="middle" font-size="14" fill="white" font-weight="bold">Paint</text>
+  <text x="560" y="130" text-anchor="middle" font-size="9" fill="#FADBD8">pixels, rasterize</text>
+
+  <line x1="625" y1="117" x2="645" y2="117" stroke="#7F8C8D" stroke-width="2" marker-end="url(#arr5)"/>
+
+  <rect x="650" y="90" width="140" height="55" rx="8" fill="#2ECC71"/>
+  <text x="720" y="112" text-anchor="middle" font-size="14" fill="white" font-weight="bold">Composite</text>
+  <text x="720" y="130" text-anchor="middle" font-size="9" fill="#D5F5E3">GPU layers merge</text>
+
+  <!-- Shortcut paths -->
+  <text x="30" y="175" font-size="12" font-weight="bold" fill="#2C3E50">Optimization paths:</text>
+
+  <rect x="30" y="185" width="400" height="22" rx="4" fill="#2ECC71" opacity="0.15"/>
+  <text x="40" y="201" font-size="10" fill="#27AE60">transform / opacity only: JS &#x2192; Composite (skip Layout + Paint)</text>
+
+  <rect x="30" y="212" width="400" height="22" rx="4" fill="#F39C12" opacity="0.15"/>
+  <text x="40" y="228" font-size="10" fill="#E67E22">color / background: JS &#x2192; Style &#x2192; Paint &#x2192; Composite (skip Layout)</text>
+
+  <rect x="30" y="239" width="400" height="22" rx="4" fill="#E74C3C" opacity="0.15"/>
+  <text x="40" y="255" font-size="10" fill="#C0392B">width / height / top: JS &#x2192; Style &#x2192; Layout &#x2192; Paint &#x2192; Composite (full)</text>
+
+  <!-- Frame budget -->
+  <text x="500" y="175" font-size="14" font-weight="bold" fill="#2C3E50">Frame Budget (60fps):</text>
+
+  <rect x="500" y="185" width="370" height="80" rx="10" fill="white" stroke="#3498DB" stroke-width="1"/>
+
+  <!-- Budget bar -->
+  <rect x="520" y="200" width="330" height="25" rx="4" fill="#ECF0F1"/>
+  <rect x="520" y="200" width="210" height="25" rx="4" fill="#3498DB" opacity="0.7"/>
+  <rect x="730" y="200" width="60" height="25" rx="0" fill="#E74C3C" opacity="0.3"/>
+  <rect x="790" y="200" width="60" height="25" rx="4" fill="#95A5A6" opacity="0.3"/>
+
+  <text x="625" y="217" text-anchor="middle" font-size="10" fill="white" font-weight="bold">App code ~10-12ms</text>
+  <text x="760" y="217" text-anchor="middle" font-size="9" fill="#C0392B">Render</text>
+  <text x="820" y="217" text-anchor="middle" font-size="9" fill="#666">Browser</text>
+
+  <text x="685" y="250" text-anchor="middle" font-size="14" fill="#2C3E50" font-weight="bold">Total: 16.67ms = 1000ms / 60fps</text>
+
+  <!-- FPS Calculation formulas -->
+  <text x="30" y="290" font-size="14" font-weight="bold" fill="#2C3E50">FPS Formulas:</text>
+
+  <g transform="translate(30, 300)" font-size="11">
+    <rect x="0" y="0" width="260" height="28" rx="5" fill="#D6EAF8"/>
+    <text x="10" y="19" fill="#2471A3" font-weight="bold">avgFps = 1000 / avgFrameTime</text>
+
+    <rect x="280" y="0" width="260" height="28" rx="5" fill="#FADBD8"/>
+    <text x="290" y="19" fill="#CB4335" font-weight="bold">minFps = 1000 / maxFrameTime</text>
+
+    <rect x="560" y="0" width="300" height="28" rx="5" fill="#D5F5E3"/>
+    <text x="570" y="19" fill="#1E8449" font-weight="bold">droppedFrames = expected - actual</text>
+
+    <rect x="0" y="36" width="340" height="28" rx="5" fill="#FEF9E7"/>
+    <text x="10" y="55" fill="#B7950B" font-weight="bold">expectedFrames = durationMs / 16.67</text>
+
+    <rect x="360" y="36" width="400" height="28" rx="5" fill="#F5EEF8"/>
+    <text x="370" y="55" fill="#6C3483" font-weight="bold">droppedPercent = (dropped / expected) x 100</text>
+  </g>
+
+  <!-- Frame visualization -->
+  <text x="30" y="395" font-size="14" font-weight="bold" fill="#2C3E50">Frame Timing Visualization:</text>
+
+  <g transform="translate(30, 405)">
+    <!-- Good frames -->
+    <rect x="0" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="20" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="40" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="60" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="80" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <!-- Dropped frame -->
+    <rect x="100" y="-50" width="16" height="100" rx="2" fill="#E74C3C"/>
+    <text x="108" y="-55" text-anchor="middle" font-size="8" fill="#E74C3C">33ms!</text>
+    <!-- Good frames -->
+    <rect x="120" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="140" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <!-- Long frame -->
+    <rect x="160" y="-80" width="16" height="130" rx="2" fill="#E74C3C"/>
+    <text x="168" y="-85" text-anchor="middle" font-size="8" fill="#E74C3C">50ms!</text>
+    <!-- Good frames -->
+    <rect x="180" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="200" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="220" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+    <rect x="240" y="0" width="16" height="50" rx="2" fill="#2ECC71"/>
+
+    <!-- 16.67ms line -->
+    <line x1="0" y1="50" x2="260" y2="50" stroke="#3498DB" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="270" y="54" font-size="9" fill="#3498DB">16.67ms (60fps target)</text>
+
+    <!-- Labels -->
+    <text x="50" y="70" text-anchor="middle" font-size="9" fill="#2ECC71">Good frames</text>
+    <text x="108" y="70" text-anchor="middle" font-size="9" fill="#E74C3C">Dropped</text>
+    <text x="168" y="70" text-anchor="middle" font-size="9" fill="#E74C3C">Jank</text>
+  </g>
+
+  <!-- Thresholds -->
+  <g transform="translate(450, 405)">
+    <text x="0" y="0" font-size="12" font-weight="bold" fill="#2C3E50">Thresholds:</text>
+
+    <rect x="0" y="10" width="120" height="28" rx="5" fill="#27AE60" opacity="0.15"/>
+    <rect x="0" y="10" width="4" height="28" rx="2" fill="#27AE60"/>
+    <text x="15" y="29" font-size="11" fill="#27AE60" font-weight="bold">&#x2265;55 fps Good</text>
+
+    <rect x="140" y="10" width="140" height="28" rx="5" fill="#F39C12" opacity="0.15"/>
+    <rect x="140" y="10" width="4" height="28" rx="2" fill="#F39C12"/>
+    <text x="155" y="29" font-size="11" fill="#F39C12" font-weight="bold">30-54 fps Medium</text>
+
+    <rect x="300" y="10" width="120" height="28" rx="5" fill="#E74C3C" opacity="0.15"/>
+    <rect x="300" y="10" width="4" height="28" rx="2" fill="#E74C3C"/>
+    <text x="315" y="29" font-size="11" fill="#E74C3C" font-weight="bold">&#x003C;30 fps Poor</text>
+
+    <rect x="0" y="48" width="420" height="28" rx="5" fill="#2C3E50" opacity="0.08"/>
+    <text x="210" y="67" text-anchor="middle" font-size="11" fill="#2C3E50">Dropped frames: &#x003C;5% good | 5-15% medium | &#x003E;15% poor</text>
+  </g>
+</svg>

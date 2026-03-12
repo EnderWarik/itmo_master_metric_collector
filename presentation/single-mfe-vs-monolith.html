@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1 MFE vs Monolith</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+  <style>
+    :root {
+      --r-heading-color: #2c3e50;
+      --r-main-color: #333;
+    }
+    .reveal { font-size: 28px; }
+    .reveal h1 { font-size: 1.8em; }
+    .reveal h2 { font-size: 1.4em; color: #2c3e50; }
+    .reveal h3 { font-size: 1.1em; color: #34495e; }
+    .reveal table { font-size: 0.65em; margin: 0 auto; border-collapse: collapse; }
+    .reveal table th { background: #2c3e50; color: #fff; padding: 6px 12px; }
+    .reveal table td { padding: 5px 12px; border: 1px solid #ddd; }
+    .reveal table tr:nth-child(even) { background: #f8f9fa; }
+    .reveal .subtitle { font-size: 0.7em; color: #7f8c8d; margin-top: 0.5em; }
+    .delta-good { color: #27ae60; font-weight: bold; }
+    .delta-bad { color: #e74c3c; font-weight: bold; }
+    .delta-neutral { color: #7f8c8d; }
+    .reveal .highlight-green { color: #27ae60; font-weight: bold; }
+    .reveal .highlight-red { color: #e74c3c; font-weight: bold; }
+    .reveal .metric-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; font-size: 0.8em;
+    }
+    .reveal .metric-card {
+      background: #f8f9fa; border-radius: 8px;
+      padding: 14px; border-left: 4px solid #2980b9;
+    }
+    .reveal .metric-card.good { border-left-color: #27ae60; }
+    .reveal .metric-card.bad { border-left-color: #e74c3c; }
+    .reveal .conclusion-box {
+      background: #eef7ff; border-radius: 10px;
+      padding: 20px; border: 1px solid #2980b9;
+      text-align: left;
+    }
+    .reveal .slide-number { font-size: 12px; }
+    .reveal .progress { height: 4px; }
+    .conditions { font-size: 0.7em; color: #555; margin-top: 1rem; }
+    .conditions td { font-size: 0.85em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- Title -->
+<section>
+  <h1>1 MFE vs Monolith</h1>
+  <p class="subtitle">Что если загружается только один микрофронт?</p>
+  <br>
+  <p style="font-size: 0.75em;">
+    Сравнение: <strong>pizza-builder</strong> (единственный MFE)<br>
+    vs <strong>монолитное приложение</strong> (все страницы)
+  </p>
+  <br>
+  <table class="conditions">
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td>Viewport</td><td>1920 x 1080</td></tr>
+    <tr><td>Cache</td><td>Off (incognito)</td></tr>
+    <tr><td>Throttling</td><td>Off</td></tr>
+    <tr><td>Repeats</td><td>10 (median/average)</td></tr>
+  </table>
+</section>
+
+<!-- Navigation Timing -->
+<section>
+  <h2>Navigation Timing</h2>
+  <table>
+    <tr><th>Metric</th><th>Monolith</th><th>1 MFE</th><th>Delta</th></tr>
+    <tr><td>DOM Parse, ms</td><td>209</td><td>223</td><td class="delta-bad">-6%</td></tr>
+    <tr><td>Execute Scripts, ms</td><td>688</td><td>105</td><td class="delta-good">+85%</td></tr>
+    <tr><td>SubResources, ms</td><td>148</td><td>0</td><td class="delta-good">+100%</td></tr>
+    <tr><td>DOMContentLoaded, ms</td><td>950</td><td>342</td><td class="delta-good">+64%</td></tr>
+    <tr><td>Load Event, ms</td><td>1098</td><td>342</td><td class="delta-good">+69%</td></tr>
+    <tr><td>Total, ms</td><td>1098</td><td>342</td><td class="delta-good">+69%</td></tr>
+  </table>
+  <p style="font-size: 0.65em; margin-top: 12px;">
+    1 MFE в <strong>3.2 раза быстрее</strong> по Load.<br>
+    Scripts exec 105 vs 688 ms — грузится только код текущего модуля.
+  </p>
+</section>
+
+<!-- Lighthouse -->
+<section>
+  <h2>Lighthouse</h2>
+  <table>
+    <tr><th>Metric</th><th>Monolith</th><th>1 MFE</th><th>Delta</th></tr>
+    <tr><td>Speed Index, ms</td><td>1857</td><td>1639</td><td class="delta-good">+12%</td></tr>
+    <tr><td>FCP, ms</td><td>1857</td><td>1365</td><td class="delta-good">+26%</td></tr>
+    <tr><td>LCP, ms</td><td>4033</td><td>3490</td><td class="delta-good">+13%</td></tr>
+    <tr><td>TTI, ms</td><td>4059</td><td>3519</td><td class="delta-good">+13%</td></tr>
+    <tr><td>TBT, ms</td><td>155</td><td>113</td><td class="delta-good">+27%</td></tr>
+    <tr><td>CLS</td><td>0.09</td><td>0.09</td><td class="delta-neutral">0%</td></tr>
+    <tr><td>Performance Score</td><td>64</td><td>71.7</td><td class="delta-good">+12%</td></tr>
+  </table>
+  <p style="font-size: 0.65em; margin-top: 12px;">
+    <strong>1 MFE выигрывает по каждой метрике Lighthouse.</strong><br>
+    Performance Score: 71.7 vs 64 (+12%).
+  </p>
+</section>
+
+<!-- Resources & Network -->
+<section>
+  <h2>Resources & Network</h2>
+  <table>
+    <tr><th>Metric</th><th>Monolith</th><th>1 MFE</th><th>Delta</th></tr>
+    <tr><td>Total Resources</td><td>42</td><td>35</td><td class="delta-good">+17%</td></tr>
+    <tr><td>Transfer Size</td><td>552 KB</td><td>327 KB</td><td class="delta-good">+41%</td></tr>
+    <tr><td>Scripts Count</td><td>6</td><td>7</td><td class="delta-neutral">-17%</td></tr>
+    <tr><td>Scripts Size</td><td>174 KB</td><td>57 KB</td><td class="delta-good">+67%</td></tr>
+    <tr><td>Unique Domains</td><td>2</td><td>2</td><td class="delta-neutral">0%</td></tr>
+  </table>
+  <p style="font-size: 0.65em; margin-top: 12px;">
+    Transfer Size на 41% меньше — MFE грузит только код текущего модуля.<br>
+    Scripts Size: 57 KB vs 174 KB — монолит тащит все страницы.
+  </p>
+</section>
+
+<!-- V8 / Rendering -->
+<section>
+  <h2>V8 / Rendering</h2>
+  <table>
+    <tr><th>Metric</th><th>Monolith</th><th>1 MFE</th><th>Delta</th></tr>
+    <tr><td>JS Parse, ms</td><td>144</td><td>105</td><td class="delta-good">+27%</td></tr>
+    <tr><td>JS Compile, ms</td><td>48</td><td>43</td><td class="delta-good">+11%</td></tr>
+    <tr><td>Task Duration, ms</td><td>294</td><td>289</td><td class="delta-neutral">+2%</td></tr>
+    <tr><td>Layout Count</td><td>4.2</td><td>3.0</td><td class="delta-good">+29%</td></tr>
+    <tr><td>Recalc Style Count</td><td>6.2</td><td>6.0</td><td class="delta-neutral">+3%</td></tr>
+    <tr><td>JS Heap Used, MB</td><td>3.38</td><td>3.44</td><td class="delta-neutral">-2%</td></tr>
+    <tr><td>DOM Nodes</td><td>1060</td><td>1995</td><td class="delta-bad">-88%</td></tr>
+  </table>
+  <p style="font-size: 0.65em; margin-top: 12px;">
+    JS Parse/Compile быстрее у MFE — меньше кода для обработки.<br>
+    Task Duration и Heap практически идентичны.
+  </p>
+</section>
+
+<!-- 3 MFE vs 1 MFE vs Monolith -->
+<section>
+  <h2>Сравнение: 1 MFE vs 3 MFE vs Monолит</h2>
+  <table>
+    <tr><th>Metric</th><th>Monolith</th><th>1 MFE</th><th>3 MFE</th></tr>
+    <tr><td>Load, ms</td><td>1098</td><td class="delta-good">342</td><td class="delta-good">376</td></tr>
+    <tr><td>Performance Score</td><td>64</td><td class="delta-good">71.7</td><td class="delta-bad">51.5</td></tr>
+    <tr><td>FCP, ms</td><td>1857</td><td class="delta-good">1365</td><td class="delta-bad">2109</td></tr>
+    <tr><td>LCP, ms</td><td>4033</td><td class="delta-good">3490</td><td class="delta-bad">6132</td></tr>
+    <tr><td>TTI, ms</td><td>4059</td><td class="delta-good">3519</td><td class="delta-bad">6144</td></tr>
+    <tr><td>Transfer Size</td><td>552 KB</td><td class="delta-good">327 KB</td><td class="delta-bad">680 KB</td></tr>
+    <tr><td>Scripts Count</td><td>6</td><td>7</td><td class="delta-bad">35</td></tr>
+    <tr><td>JS Parse, ms</td><td>144</td><td class="delta-good">105</td><td class="delta-bad">335</td></tr>
+    <tr><td>Unique Domains</td><td>2</td><td>2</td><td class="delta-bad">5</td></tr>
+  </table>
+  <p style="font-size: 0.65em; margin-top: 12px;">
+    1 MFE побеждает монолит. 3 MFE проигрывают.<br>
+    <strong>Точка перелома — количество одновременно загружаемых модулей.</strong>
+  </p>
+</section>
+
+<!-- Key Insight -->
+<section>
+  <h2>Ключевой вывод</h2>
+  <div class="metric-grid">
+    <div class="metric-card good">
+      <strong>1 MFE</strong><br>
+      Score: <span class="highlight-green">71.7</span><br>
+      Load: <span class="highlight-green">342 ms</span><br>
+      Transfer: <span class="highlight-green">327 KB</span><br>
+      Domains: 2, Scripts: 7
+    </div>
+    <div class="metric-card bad">
+      <strong>3 MFE</strong><br>
+      Score: <span class="highlight-red">51.5</span><br>
+      Load: <span class="highlight-red">376 ms</span><br>
+      Transfer: <span class="highlight-red">680 KB</span><br>
+      Domains: 5, Scripts: 35
+    </div>
+  </div>
+  <br>
+  <div class="conclusion-box" style="font-size: 0.8em;">
+    <p style="margin: 0;">
+      <strong>MFE-архитектура сама по себе быстрее монолита</strong> — при загрузке одного модуля
+      браузер получает только нужный код (57 KB vs 174 KB скриптов).
+    </p>
+    <br>
+    <p style="margin: 0;">
+      <strong>Деградация возникает при загрузке нескольких MFE</strong> — каждый дополнительный модуль
+      добавляет домен, remoteEntry.js, loadShare() и набор чанков. При 3 MFE: 35 скриптов с 5 доменов
+      порождают каскад JS Parse/Compile, который убивает TTI и Performance Score.
+    </p>
+  </div>
+</section>
+
+<!-- Recommendation -->
+<section>
+  <h2>Рекомендация</h2>
+  <div class="conclusion-box" style="font-size: 0.85em;">
+    <ol>
+      <li><strong>Минимизировать число MFE на страницу</strong> — идеально 1 модуль + shell</li>
+      <br>
+      <li><strong>Lazy-load remote MFE</strong> — не загружать remoteEntry.js до навигации к модулю</li>
+      <br>
+      <li><strong>Объединять мелкие MFE</strong> — если модули всегда загружаются вместе, они должны быть одним MFE</li>
+      <br>
+      <li><strong>Preload hints</strong> — для критических чанков текущей страницы, чтобы снизить каскад запросов</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    progress: true,
+    center: true,
+  });
+</script>
+</body>
+</html>

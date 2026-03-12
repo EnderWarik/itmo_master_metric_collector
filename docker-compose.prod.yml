@@ -1,4 +1,28 @@
 services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.41
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.le.acme.email=admin@ew-production.ru
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - metric
+
   metrics-backend:
     build:
       context: ./backend
@@ -15,8 +39,13 @@ services:
     security_opt:
       - seccomp:unconfined
     shm_size: '2gb'
-    ports:
-      - "127.0.0.1:3001:3000"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=Host(`metric.pizza.ew-production.ru`) && PathPrefix(`/api`)
+      - traefik.http.routers.backend.entrypoints=websecure
+      - traefik.http.routers.backend.tls.certresolver=le
+      - traefik.http.routers.backend.priority=20
+      - traefik.http.services.backend.loadbalancer.server.port=3000
     networks:
       - metric
 
@@ -29,10 +58,18 @@ services:
     image: metrics-frontend:latest
     container_name: metrics-frontend
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8081:80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`metric.pizza.ew-production.ru`)
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls.certresolver=le
+      - traefik.http.routers.frontend.priority=10
+      - traefik.http.services.frontend.loadbalancer.server.port=80
     networks:
       - metric
+
+volumes:
+  letsencrypt:
 
 networks:
   metric:

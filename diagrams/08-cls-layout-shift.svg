@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg8" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8ECF1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="420" fill="url(#bg8)" rx="12"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">Cumulative Layout Shift (CLS)</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#7F8C8D">Visual stability metric - impact fraction x distance fraction</text>
+
+  <!-- Before / After viewport -->
+  <text x="120" y="75" text-anchor="middle" font-size="13" font-weight="bold" fill="#2C3E50">Frame 1 (before)</text>
+  <rect x="20" y="85" width="200" height="150" rx="6" fill="white" stroke="#BDC3C7" stroke-width="2"/>
+  <!-- Header -->
+  <rect x="30" y="95" width="180" height="25" rx="3" fill="#3498DB" opacity="0.3"/>
+  <text x="120" y="112" text-anchor="middle" font-size="9" fill="#3498DB">Header</text>
+  <!-- Text block -->
+  <rect x="30" y="130" width="180" height="50" rx="3" fill="#2ECC71" opacity="0.3" stroke="#2ECC71" stroke-dasharray="3,2"/>
+  <text x="120" y="155" text-anchor="middle" font-size="9" fill="#2ECC71">Text content</text>
+  <!-- Image placeholder -->
+  <rect x="30" y="190" width="180" height="35" rx="3" fill="#E74C3C" opacity="0.2" stroke="#E74C3C" stroke-dasharray="3,2"/>
+  <text x="120" y="212" text-anchor="middle" font-size="9" fill="#E74C3C">Image (loading...)</text>
+
+  <!-- Arrow -->
+  <text x="275" y="165" font-size="30" fill="#7F8C8D">&#x2192;</text>
+
+  <text x="410" y="75" text-anchor="middle" font-size="13" font-weight="bold" fill="#2C3E50">Frame 2 (after shift)</text>
+  <rect x="310" y="85" width="200" height="150" rx="6" fill="white" stroke="#BDC3C7" stroke-width="2"/>
+  <!-- Header (same) -->
+  <rect x="320" y="95" width="180" height="25" rx="3" fill="#3498DB" opacity="0.3"/>
+  <text x="410" y="112" text-anchor="middle" font-size="9" fill="#3498DB">Header</text>
+  <!-- Image loaded (pushed text down) -->
+  <rect x="320" y="125" width="180" height="40" rx="3" fill="#E74C3C" opacity="0.4"/>
+  <text x="410" y="149" text-anchor="middle" font-size="9" fill="#E74C3C">Image (loaded!)</text>
+  <!-- Text shifted down -->
+  <rect x="320" y="170" width="180" height="50" rx="3" fill="#2ECC71" opacity="0.3" stroke="#F39C12" stroke-width="2"/>
+  <text x="410" y="195" text-anchor="middle" font-size="9" fill="#F39C12">Text content (shifted!)</text>
+
+  <!-- Shift indicator -->
+  <line x1="520" y1="155" x2="520" y2="195" stroke="#F39C12" stroke-width="2"/>
+  <polygon points="516,155 524,155 520,148" fill="#F39C12"/>
+  <polygon points="516,195 524,195 520,202" fill="#F39C12"/>
+  <text x="555" y="178" font-size="10" fill="#F39C12" font-weight="bold">distance</text>
+
+  <!-- Formulas -->
+  <g transform="translate(20, 250)">
+    <rect x="0" y="0" width="760" height="100" rx="10" fill="white" stroke="#9B59B6" stroke-width="1"/>
+
+    <text x="380" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">Layout Shift Score Formula</text>
+
+    <rect x="20" y="35" width="340" height="25" rx="5" fill="#E8DAEF"/>
+    <text x="30" y="52" font-size="11" fill="#6C3483" font-weight="bold">impact_fraction = union(old, new) / viewport</text>
+
+    <rect x="380" y="35" width="360" height="25" rx="5" fill="#FEF9E7"/>
+    <text x="390" y="52" font-size="11" fill="#B7950B" font-weight="bold">distance_fraction = max_move / viewport_dimension</text>
+
+    <rect x="150" y="70" width="460" height="25" rx="5" fill="#FADBD8"/>
+    <text x="380" y="87" text-anchor="middle" font-size="13" fill="#CB4335" font-weight="bold">layout_shift_score = impact_fraction x distance_fraction</text>
+  </g>
+
+  <!-- Session window -->
+  <g transform="translate(20, 365)">
+    <rect x="0" y="0" width="760" height="45" rx="10" fill="white" stroke="#2C3E50" stroke-width="1"/>
+    <text x="380" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="#2C3E50">Session Window Approach</text>
+    <text x="380" y="36" text-anchor="middle" font-size="10" fill="#555">CLS = max( sum of shift_scores in each window ) | Window ends: gap &#x003E;1s OR duration &#x003E;5s</text>
+  </g>
+</svg>

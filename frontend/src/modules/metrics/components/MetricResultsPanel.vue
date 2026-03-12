@@ -124,16 +124,29 @@ function exportMetrics() {
   const allKeys: string[] = [];
   const keySet = new Set<string>();
   
+  // Вспомогательная функция для добавления ключей
+  const addKey = (label: string, key: string) => {
+    const fullKey = `${label}|${key}`;
+    if (!keySet.has(fullKey)) {
+      keySet.add(fullKey);
+      allKeys.push(fullKey);
+    }
+  };
+  
   firstRun.forEach(result => {
     const payload = result.payload as Record<string, unknown>;
     Object.keys(payload).forEach(key => {
       const value = payload[key];
       if (typeof value === 'number') {
-        const fullKey = `${result.label}|${key}`;
-        if (!keySet.has(fullKey)) {
-          keySet.add(fullKey);
-          allKeys.push(fullKey);
-        }
+        addKey(result.label, key);
+      } else if (key === 'timing' && typeof value === 'object' && value !== null) {
+        // Обрабатываем вложенный объект timing (для Navigation Timing, TTFB и т.д.)
+        Object.keys(value as Record<string, unknown>).forEach(timingKey => {
+          const timingValue = (value as Record<string, unknown>)[timingKey];
+          if (typeof timingValue === 'number') {
+            addKey(result.label, `timing.${timingKey}`);
+          }
+        });
       }
     });
   });
@@ -148,7 +161,17 @@ function exportMetrics() {
       const result = run.find(r => r.label === label);
       if (result && payloadKey) {
         const payload = result.payload as Record<string, unknown>;
-        const value = payload[payloadKey];
+        let value: unknown;
+        
+        // Проверяем, если ключ содержит timing. — извлекаем из вложенного объекта
+        if (payloadKey.startsWith('timing.')) {
+          const timingKey = payloadKey.replace('timing.', '');
+          const timing = payload.timing as Record<string, unknown> | undefined;
+          value = timing?.[timingKey];
+        } else {
+          value = payload[payloadKey];
+        }
+        
         row.push(typeof value === 'number' ? Math.round(value * 100) / 100 : '');
       } else {
         row.push('');

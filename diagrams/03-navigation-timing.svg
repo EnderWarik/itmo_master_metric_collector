@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8ECF1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="520" fill="url(#bg3)" rx="12"/>
+
+  <text x="480" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">Navigation Timing API Level 2</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#7F8C8D">performance.getEntriesByType('navigation')[0]</text>
+
+  <!-- Waterfall bars -->
+  <!-- Redirect -->
+  <rect x="100" y="70" width="80" height="30" rx="5" fill="#95A5A6"/>
+  <text x="140" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Redirect</text>
+
+  <!-- DNS -->
+  <rect x="190" y="70" width="80" height="30" rx="5" fill="#3498DB"/>
+  <text x="230" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">DNS</text>
+
+  <!-- TCP -->
+  <rect x="280" y="70" width="70" height="30" rx="5" fill="#2ECC71"/>
+  <text x="315" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">TCP</text>
+
+  <!-- TLS -->
+  <rect x="360" y="70" width="60" height="30" rx="5" fill="#9B59B6"/>
+  <text x="390" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">TLS</text>
+
+  <!-- Request -->
+  <rect x="430" y="70" width="90" height="30" rx="5" fill="#E67E22"/>
+  <text x="475" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Request</text>
+
+  <!-- Response -->
+  <rect x="530" y="70" width="80" height="30" rx="5" fill="#E74C3C"/>
+  <text x="570" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Response</text>
+
+  <!-- DOM Parse -->
+  <rect x="620" y="70" width="80" height="30" rx="5" fill="#F39C12"/>
+  <text x="660" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">DOM Parse</text>
+
+  <!-- Scripts -->
+  <rect x="710" y="70" width="70" height="30" rx="5" fill="#1ABC9C"/>
+  <text x="745" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Scripts</text>
+
+  <!-- Subresources -->
+  <rect x="790" y="70" width="90" height="30" rx="5" fill="#8E44AD"/>
+  <text x="835" y="90" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Subresources</text>
+
+  <!-- Backend / Frontend labels -->
+  <line x1="100" y1="110" x2="610" y2="110" stroke="#2980B9" stroke-width="2"/>
+  <text x="355" y="125" text-anchor="middle" font-size="11" fill="#2980B9" font-weight="bold">Backend (Network)</text>
+
+  <line x1="620" y1="110" x2="880" y2="110" stroke="#D35400" stroke-width="2"/>
+  <text x="750" y="125" text-anchor="middle" font-size="11" fill="#D35400" font-weight="bold">Frontend (DOM)</text>
+
+  <!-- Timestamps -->
+  <text x="30" y="160" font-size="14" font-weight="bold" fill="#2C3E50">Key Timestamps:</text>
+
+  <g transform="translate(0, 170)">
+    <!-- Timeline line -->
+    <line x1="30" y1="20" x2="930" y2="20" stroke="#BDC3C7" stroke-width="3"/>
+
+    <!-- Timestamp markers -->
+    <circle cx="30" cy="20" r="5" fill="#2C3E50"/>
+    <text x="30" y="45" text-anchor="middle" font-size="8" fill="#2C3E50" font-weight="bold">startTime</text>
+    <text x="30" y="55" text-anchor="middle" font-size="7" fill="#95A5A6">(0)</text>
+
+    <circle cx="130" cy="20" r="5" fill="#95A5A6"/>
+    <text x="130" y="45" text-anchor="middle" font-size="8" fill="#95A5A6" font-weight="bold">fetchStart</text>
+
+    <circle cx="220" cy="20" r="5" fill="#3498DB"/>
+    <text x="220" y="45" text-anchor="middle" font-size="8" fill="#3498DB" font-weight="bold">domainLookup</text>
+    <text x="220" y="55" text-anchor="middle" font-size="7" fill="#95A5A6">End</text>
+
+    <circle cx="330" cy="20" r="5" fill="#2ECC71"/>
+    <text x="330" y="45" text-anchor="middle" font-size="8" fill="#2ECC71" font-weight="bold">connectEnd</text>
+
+    <circle cx="430" cy="20" r="5" fill="#E67E22"/>
+    <text x="430" y="45" text-anchor="middle" font-size="8" fill="#E67E22" font-weight="bold">requestStart</text>
+
+    <circle cx="510" cy="20" r="5" fill="#E74C3C"/>
+    <text x="510" y="45" text-anchor="middle" font-size="8" fill="#E74C3C" font-weight="bold">responseStart</text>
+    <text x="510" y="55" text-anchor="middle" font-size="7" fill="#95A5A6">(TTFB)</text>
+
+    <circle cx="590" cy="20" r="5" fill="#E74C3C"/>
+    <text x="590" y="45" text-anchor="middle" font-size="8" fill="#E74C3C" font-weight="bold">responseEnd</text>
+
+    <circle cx="670" cy="20" r="5" fill="#F39C12"/>
+    <text x="670" y="45" text-anchor="middle" font-size="8" fill="#F39C12" font-weight="bold">domInteractive</text>
+
+    <circle cx="750" cy="20" r="5" fill="#1ABC9C"/>
+    <text x="750" y="45" text-anchor="middle" font-size="8" fill="#1ABC9C" font-weight="bold">DCL End</text>
+
+    <circle cx="840" cy="20" r="5" fill="#8E44AD"/>
+    <text x="840" y="45" text-anchor="middle" font-size="8" fill="#8E44AD" font-weight="bold">domComplete</text>
+
+    <circle cx="930" cy="20" r="5" fill="#2C3E50"/>
+    <text x="920" y="45" text-anchor="middle" font-size="8" fill="#2C3E50" font-weight="bold">loadEventEnd</text>
+  </g>
+
+  <!-- Formulas section -->
+  <text x="30" y="265" font-size="14" font-weight="bold" fill="#2C3E50">Phase Formulas:</text>
+
+  <g transform="translate(30, 275)" font-size="11">
+    <rect x="0" y="0" width="280" height="24" rx="4" fill="#D6EAF8"/>
+    <text x="10" y="16" fill="#2471A3">redirectMs = redirectEnd - redirectStart</text>
+
+    <rect x="300" y="0" width="310" height="24" rx="4" fill="#D6EAF8"/>
+    <text x="310" y="16" fill="#2471A3">dnsMs = domainLookupEnd - domainLookupStart</text>
+
+    <rect x="630" y="0" width="280" height="24" rx="4" fill="#D5F5E3"/>
+    <text x="640" y="16" fill="#1E8449">connectMs = connectEnd - connectStart</text>
+
+    <rect x="0" y="32" width="310" height="24" rx="4" fill="#E8DAEF"/>
+    <text x="10" y="48" fill="#7D3C98">sslMs = connectEnd - secureConnectionStart</text>
+
+    <rect x="330" y="32" width="290" height="24" rx="4" fill="#FDEBD0"/>
+    <text x="340" y="48" fill="#CA6F1E">requestMs = responseStart - requestStart</text>
+
+    <rect x="640" y="32" width="270" height="24" rx="4" fill="#FADBD8"/>
+    <text x="650" y="48" fill="#CB4335">responseMs = responseEnd - responseStart</text>
+
+    <rect x="0" y="64" width="290" height="24" rx="4" fill="#FEF9E7"/>
+    <text x="10" y="80" fill="#B7950B">domParseMs = domInteractive - responseEnd</text>
+
+    <rect x="310" y="64" width="370" height="24" rx="4" fill="#D1F2EB"/>
+    <text x="320" y="80" fill="#148F77">executeScriptsMs = dclEventStart - domInteractive</text>
+
+    <rect x="700" y="64" width="210" height="24" rx="4" fill="#F5EEF8"/>
+    <text x="710" y="80" fill="#6C3483">subResourcesMs = ...</text>
+  </g>
+
+  <!-- DOM States -->
+  <text x="30" y="395" font-size="14" font-weight="bold" fill="#2C3E50">DOM Readiness States:</text>
+
+  <g transform="translate(30, 405)">
+    <rect x="0" y="0" width="200" height="40" rx="8" fill="#F39C12" opacity="0.15" stroke="#F39C12"/>
+    <text x="100" y="17" text-anchor="middle" font-size="11" fill="#E67E22" font-weight="bold">domInteractive</text>
+    <text x="100" y="32" text-anchor="middle" font-size="9" fill="#7F8C8D">DOM ready, scripts pending</text>
+
+    <text x="220" y="20" font-size="18" fill="#BDC3C7">&#x2192;</text>
+
+    <rect x="250" y="0" width="200" height="40" rx="8" fill="#1ABC9C" opacity="0.15" stroke="#1ABC9C"/>
+    <text x="350" y="17" text-anchor="middle" font-size="11" fill="#1ABC9C" font-weight="bold">DOMContentLoaded</text>
+    <text x="350" y="32" text-anchor="middle" font-size="9" fill="#7F8C8D">Deferred scripts done</text>
+
+    <text x="470" y="20" font-size="18" fill="#BDC3C7">&#x2192;</text>
+
+    <rect x="500" y="0" width="180" height="40" rx="8" fill="#8E44AD" opacity="0.15" stroke="#8E44AD"/>
+    <text x="590" y="17" text-anchor="middle" font-size="11" fill="#8E44AD" font-weight="bold">domComplete</text>
+    <text x="590" y="32" text-anchor="middle" font-size="9" fill="#7F8C8D">All subresources loaded</text>
+
+    <text x="700" y="20" font-size="18" fill="#BDC3C7">&#x2192;</text>
+
+    <rect x="730" y="0" width="180" height="40" rx="8" fill="#2C3E50" opacity="0.15" stroke="#2C3E50"/>
+    <text x="820" y="17" text-anchor="middle" font-size="11" fill="#2C3E50" font-weight="bold">load event</text>
+    <text x="820" y="32" text-anchor="middle" font-size="9" fill="#7F8C8D">Page fully loaded</text>
+  </g>
+
+  <!-- Total -->
+  <rect x="30" y="460" width="900" height="40" rx="8" fill="#2C3E50" opacity="0.1"/>
+  <text x="480" y="485" text-anchor="middle" font-size="14" fill="#2C3E50" font-weight="bold">totalMs = loadEventEnd - startTime (= loadEventEnd, since startTime = 0)</text>
+</svg>

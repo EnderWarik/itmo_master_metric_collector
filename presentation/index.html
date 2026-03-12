@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Исследование эффективности микрофронтендов</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <style>
+    :root {
+      --r-heading-color: #2c3e50;
+      --r-main-color: #333;
+      --r-link-color: #2980b9;
+    }
+    .reveal { font-size: 28px; }
+    .reveal h1 { font-size: 1.8em; }
+    .reveal h2 { font-size: 1.4em; color: #2c3e50; }
+    .reveal h3 { font-size: 1.1em; color: #34495e; }
+    .reveal table { font-size: 0.6em; margin: 0 auto; border-collapse: collapse; }
+    .reveal table th { background: #2c3e50; color: #fff; padding: 5px 8px; }
+    .reveal table td { padding: 4px 8px; border: 1px solid #ddd; }
+    .reveal table tr:nth-child(even) { background: #f8f9fa; }
+    .reveal .subtitle { font-size: 0.7em; color: #7f8c8d; margin-top: 0.5em; }
+    .reveal .highlight-green { color: #27ae60; font-weight: bold; }
+    .reveal .highlight-red { color: #e74c3c; font-weight: bold; }
+    .reveal .highlight-blue { color: #2980b9; font-weight: bold; }
+    .reveal .two-col { display: flex; gap: 20px; align-items: flex-start; }
+    .reveal .two-col > div { flex: 1; }
+    .reveal .arch-box {
+      border: 2px solid #2c3e50; border-radius: 10px;
+      padding: 15px; margin: 10px; text-align: center;
+    }
+    .reveal .arch-box h3 { margin-top: 0; }
+    .reveal .metric-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; font-size: 0.85em;
+    }
+    .reveal .metric-card {
+      background: #f8f9fa; border-radius: 8px;
+      padding: 12px; border-left: 4px solid #2980b9;
+    }
+    .reveal .metric-card.good { border-left-color: #27ae60; }
+    .reveal .metric-card.bad { border-left-color: #e74c3c; }
+    .reveal ul { font-size: 0.85em; }
+    .reveal li { margin-bottom: 2px; }
+    .reveal .conclusion-box {
+      background: #eef7ff; border-radius: 10px;
+      padding: 20px; border: 1px solid #2980b9;
+      text-align: left;
+    }
+    .reveal .slide-number { font-size: 12px; }
+    .reveal .progress { height: 4px; }
+    .reveal pre { font-size: 0.48em; margin: 8px 0; }
+    .reveal pre code { padding: 10px !important; border-radius: 6px; max-height: 480px; }
+    .reveal code { font-size: 0.85em; }
+    .delta-good { color: #27ae60; font-weight: bold; }
+    .delta-bad { color: #e74c3c; font-weight: bold; }
+    .delta-neutral { color: #7f8c8d; }
+    .reveal .api-tag {
+      display: inline-block; background: #3498db; color: #fff;
+      padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin: 2px;
+    }
+    .reveal .api-tag.cdp { background: #e67e22; }
+    .reveal .api-tag.node { background: #27ae60; }
+    .reveal .api-tag.lh { background: #9b59b6; }
+    .reveal .metric-table { font-size: 0.55em; }
+    .reveal .metric-table td:first-child { font-family: monospace; white-space: nowrap; }
+    .reveal .metric-table td:nth-child(2) { max-width: 400px; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ==================== TITLE ==================== -->
+<section>
+  <h1>Исследование эффективности микрофронтендов</h1>
+  <p class="subtitle">с общими и изолированными зависимостями<br>в сравнении с монолитной архитектурой</p>
+  <br>
+  <p style="font-size: 0.7em;">Москалёв Алексей Дмитриевич, P4108</p>
+  <p style="font-size: 0.6em; color: #95a5a6;">Университет ИТМО, 2026</p>
+</section>
+
+<!-- ==================== PLAN ==================== -->
+<section>
+  <h2>План</h2>
+  <ol style="font-size: 0.85em;">
+    <li>Микрофронтенды: что и зачем</li>
+    <li>Экспериментальный стенд</li>
+    <li>Система метрик: 105 метрик, 52 релевантных (50%)</li>
+    <li>Детальное описание метрик по коллекторам</li>
+    <li>Методика измерений</li>
+    <li>Результаты эксперимента</li>
+    <li>Выводы</li>
+  </ol>
+</section>
+
+<!-- ==================== MFE INTRO ==================== -->
+<section>
+  <section>
+    <h2>Что такое микрофронтенды?</h2>
+    <p>Разделение фронтенда на <strong>независимые модули</strong>,<br>
+       которые разрабатываются и развёртываются отдельно</p>
+    <div class="two-col" style="margin-top: 30px;">
+      <div class="arch-box">
+        <h3>Монолит SPA</h3>
+        <p style="font-size: 0.8em;">Один проект, один бандл,<br>один домен</p>
+        <pre style="text-align: left; font-size: 0.7em;">
+┌─────────────────────┐
+│     Monolith SPA    │
+│  ┌───┐ ┌───┐ ┌───┐ │
+│  │ A │ │ B │ │ C │  │
+│  └───┘ └───┘ └───┘  │
+│    single bundle    │
+└─────────────────────┘</pre>
+      </div>
+      <div class="arch-box">
+        <h3>Микрофронтенды</h3>
+        <p style="font-size: 0.8em;">N проектов, N бандлов,<br>N доменов</p>
+        <pre style="text-align: left; font-size: 0.7em;">
+┌────────────────────────┐
+│    Shell (host)        │
+│  ┌──────┐  ┌──────┐   │
+│  │ MFE1 │  │ MFE2 │   │
+│  │remote│  │remote│   │
+│  └──────┘  └──────┘   │
+│  runtime integration  │
+└────────────────────────┘</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Зачем микрофронтенды?</h2>
+    <ul>
+      <li><strong>Независимость команд</strong> — каждый модуль разрабатывается и деплоится отдельно</li>
+      <li><strong>Масштабирование разработки</strong> — несколько команд, одно приложение</li>
+      <li><strong>Инкрементальное обновление</strong> — обновляется только изменённый модуль</li>
+      <li><strong>Технологическая гибкость</strong> — разные фреймворки в разных модулях</li>
+    </ul>
+    <br>
+    <p style="font-size: 0.8em; color: #e74c3c;">Но: накладные расходы на интеграцию, дублирование кода, рост размера поставки</p>
+    <p style="font-size: 0.8em;"><strong>Вопрос:</strong> как это влияет на производительность?</p>
+  </section>
+</section>
+
+<!-- ==================== EXPERIMENTAL STAND ==================== -->
+<section>
+  <section>
+    <h2>Экспериментальный стенд</h2>
+    <div class="two-col">
+      <div class="arch-box">
+        <h3>Монолит</h3>
+        <p style="font-size: 0.75em;">
+          Vue 3 + Pinia + Vue Router<br>
+          Vite, SPA<br>
+          1 контейнер, 1 домен<br>
+          <code>pizza.ew-production.ru</code>
+        </p>
+      </div>
+      <div class="arch-box">
+        <h3>Микрофронтенды</h3>
+        <p style="font-size: 0.75em;">
+          Vue 3 + Module Federation v1.9.3<br>
+          Shell + 5 модулей<br>
+          6 контейнеров, 7 доменов<br>
+          <code>micro.pizza.ew-production.ru</code>
+        </p>
+      </div>
+    </div>
+    <p style="font-size: 0.75em; margin-top: 20px;">
+      Приложение: заказ пиццы — выбор, корзина, оформление, профиль
+    </p>
+  </section>
+
+  <section>
+    <h2>Архитектура MFE</h2>
+    <pre style="text-align: left;">
+┌─────────────────────────────────────────────────┐
+│                 Shell (host)                     │
+│          layout, routing, shared state           │
+│                                                  │
+│   ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐  │
+│   │ Auth │ │ Cart │ │Order │ │Build.│ │Prof. │  │
+│   │ :5001│ │ :5002│ │ :5005│ │ :5004│ │ :5003│  │
+│   └──────┘ └──────┘ └──────┘ └──────┘ └──────┘  │
+│                                                  │
+│   Общие: Vue 3, Pinia (shared deps)             │
+│   Интеграция: Module Federation v1.9.3           │
+└─────────────────────────────────────────────────┘</pre>
+    <ul style="font-size: 0.75em;">
+      <li>Ленивая загрузка модулей при переходе на маршрут</li>
+      <li>Auth и Cart загружаются сразу (используются везде)</li>
+      <li>Vue и Pinia — singleton через shared deps</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Инфраструктура измерений</h2>
+    <pre style="text-align: left;">
+┌──────────────────────────────────────────────────────┐
+│           Сервер метрик (4GB, 1 CPU, Швеция)         │
+│                                                      │
+│  NestJS backend → Puppeteer → Lighthouse → CDP       │
+│                                                      │
+│  ┌──────────┐  ┌──────────┐  ┌─────────────────────┐ │
+│  │  Server  │  │ Browser  │  │        E2E          │ │
+│  │  Metrics │  │ Metrics  │  │     Scenarios       │ │
+│  │          │  │          │  │                     │ │
+│  │ • Ping   │  │ • NavTim │  │ • User flow         │ │
+│  │ • TTFB   │  │ • LH     │  │ • Input Delay       │ │
+│  │          │  │ • FPS    │  │ • Long Tasks        │ │
+│  │          │  │ • Res.T. │  │                     │ │
+│  └────┬─────┘  └────┬─────┘  └──────────┬──────────┘ │
+└───────┼─────────────┼───────────────────┼────────────┘
+        │             │                   │
+        ▼             ▼                   ▼
+  ┌──────────────────────────────────────────────┐
+  │     Серверы приложений (2GB, 1 CPU × 2)      │
+  │   Монолит              Микрофронтенды        │
+  │   Docker + Nginx       Docker + Nginx × 6    │
+  └──────────────────────────────────────────────┘</pre>
+  </section>
+</section>
+
+<!-- ==================== METRICS OVERVIEW ==================== -->
+<section>
+  <h2>Система метрик: обзор</h2>
+  <table style="font-size: 0.65em;">
+    <tr><th>#</th><th>Коллектор</th><th>Всего</th><th>Релевантных</th><th>%</th><th>Способ измерения</th></tr>
+    <tr><td>1</td><td>Ping</td><td>3</td><td>0</td><td>0%</td><td>HTTP GET + performance.now()</td></tr>
+    <tr><td>2</td><td>TTFB</td><td>7</td><td>0</td><td>0%</td><td>Node.js socket events</td></tr>
+    <tr><td>3</td><td>Navigation Timing</td><td>15</td><td>7</td><td>47%</td><td>Navigation Timing API L2</td></tr>
+    <tr><td>4</td><td>Lighthouse</td><td>8</td><td>7</td><td>88%</td><td>Lighthouse + Chrome</td></tr>
+    <tr><td>5</td><td>FPS</td><td>7</td><td>0</td><td>0%</td><td>requestAnimationFrame</td></tr>
+    <tr><td>6</td><td>Resource Timing + V8</td><td>43</td><td>25</td><td>58%</td><td>Resource Timing + CDP</td></tr>
+    <tr><td>7</td><td>E2E</td><td>12</td><td>6</td><td>50%</td><td>Puppeteer + PerformanceObserver</td></tr>
+    <tr><td>8</td><td>Bundle Analysis</td><td>10</td><td>7</td><td>70%</td><td>Node.js fs + zlib</td></tr>
+    <tr><td></td><td><strong>Итого</strong></td><td><strong>105</strong></td><td><strong>52</strong></td><td><strong>50%</strong></td><td></td></tr>
+  </table>
+  <p style="font-size: 0.65em; margin-top: 10px;">
+    Нерелевантны: Ping, TTFB (серверные), FPS (idle), Coverage, Network download, Cache (incognito)
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<!--              DETAILED METRICS BY COLLECTOR                    -->
+<!-- ============================================================ -->
+
+<!-- ==================== 3. NAVIGATION TIMING ==================== -->
+<section>
+  <section>
+    <h2>3. Navigation Timing — 7 из 15 релевантных</h2>
+    <p><span class="api-tag">Navigation Timing API Level 2</span> <span class="api-tag cdp">Puppeteer</span></p>
+    <pre><code class="language-typescript">// Puppeteer открывает страницу в headless Chromium
+import puppeteer from 'puppeteer';
+
+const browser = await puppeteer.launch({ headless: true });
+const page = await browser.newPage();
+await page.goto(url, { waitUntil: 'load', timeout: 30000 });
+
+// Собираем Navigation Timing из браузера (только релевантные фазы)
+const metrics = await page.evaluate(() => {
+  const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+  return {
+    responseMs:          nav.responseEnd - nav.responseStart,
+    domParseMs:          nav.domInteractive - nav.responseEnd,
+    executeScriptsMs:    nav.domContentLoadedEventStart - nav.domInteractive,
+    subResourcesMs:      nav.loadEventStart - nav.domContentLoadedEventEnd,
+    domContentLoadedMs:  nav.domContentLoadedEventEnd,
+    loadEventMs:         nav.loadEventEnd,
+    totalMs:             nav.loadEventEnd,
+  };
+});</code></pre>
+  </section>
+
+  <section>
+    <h2>Navigation Timing: 7 релевантных метрик</h2>
+    <table class="metric-table">
+      <tr><th>Метрика</th><th>Описание</th><th>Формула</th></tr>
+      <tr><td>responseMs</td><td>Время скачивания HTML-документа</td><td>responseEnd - responseStart</td></tr>
+      <tr><td>domParseMs</td><td>Время парсинга HTML в DOM-дерево</td><td>domInteractive - responseEnd</td></tr>
+      <tr><td>executeScriptsMs</td><td>Время выполнения скриптов при загрузке</td><td>domContentLoadedEventStart - domInteractive</td></tr>
+      <tr><td>subResourcesMs</td><td>Время загрузки подресурсов (CSS, JS, картинки)</td><td>loadEventStart - domContentLoadedEventEnd</td></tr>
+      <tr><td>domContentLoadedMs</td><td>Время до готовности DOM</td><td>domContentLoadedEventEnd</td></tr>
+      <tr><td>loadEventMs</td><td>Время полной загрузки страницы</td><td>loadEventEnd</td></tr>
+      <tr><td>totalMs</td><td>Общее время загрузки</td><td>loadEventEnd</td></tr>
+    </table>
+    <p style="font-size: 0.6em; margin-top: 8px;">
+      Нерелевантны (8): DNS, TCP, TLS, request — сетевая инфраструктура, одинакова при одном сервере
+    </p>
+  </section>
+</section>
+
+<!-- ==================== 4. LIGHTHOUSE ==================== -->
+<section>
+  <section>
+    <h2>4. Lighthouse — 7 из 8 релевантных</h2>
+    <p><span class="api-tag lh">Lighthouse</span> <span class="api-tag node">chrome-launcher</span></p>
+    <pre><code class="language-typescript">import lighthouse, { Flags } from 'lighthouse';
+import * as chromeLauncher from 'chrome-launcher';
+
+const chrome = await chromeLauncher.launch({
+  chromeFlags: ['--headless', '--no-sandbox', '--disable-gpu'],
+});
+
+const flags: Flags = {
+  port: chrome.port,
+  output: 'json',
+  onlyCategories: ['performance'],
+  formFactor: 'desktop',
+  screenEmulation: { mobile: false, width: 1920, height: 1080,
+                     deviceScaleFactor: 1, disabled: false },
+};
+
+const { lhr } = await lighthouse(url, flags);
+const audits = lhr.audits;
+
+const payload = {
+  speedIndexMs:     Math.round(audits['speed-index']?.numericValue ?? 0),
+  fcpMs:            Math.round(audits['first-contentful-paint']?.numericValue ?? 0),
+  lcpMs:            Math.round(audits['largest-contentful-paint']?.numericValue ?? 0),
+  ttiMs:            Math.round(audits['interactive']?.numericValue ?? 0),
+  tbtMs:            Math.round(audits['total-blocking-time']?.numericValue ?? 0),
+  cls:              audits['cumulative-layout-shift']?.numericValue ?? 0,
+  performanceScore: Math.round((lhr.categories.performance?.score ?? 0) * 100),
+};</code></pre>
+  </section>
+
+  <section>
+    <h2>Lighthouse: 7 релевантных метрик</h2>
+    <table class="metric-table">
+      <tr><th>Метрика</th><th>Описание</th><th>Хорошо</th><th>Плохо</th><th>Вес</th></tr>
+      <tr><td>performanceScore</td><td>Итоговый балл производительности (0–100)</td><td>≥90</td><td>&lt;50</td><td>—</td></tr>
+      <tr><td>speedIndexMs</td><td>Скорость визуального отображения контента</td><td>&lt;3.4s</td><td>&gt;5.8s</td><td>10%</td></tr>
+      <tr><td>fcpMs</td><td>Время появления первого контента на экране</td><td>&lt;1.8s</td><td>&gt;3.0s</td><td>10%</td></tr>
+      <tr><td>lcpMs</td><td>Время отрисовки крупнейшего элемента</td><td>&lt;2.5s</td><td>&gt;4.0s</td><td>25%</td></tr>
+      <tr><td>ttiMs</td><td>Время до полной интерактивности страницы</td><td>&lt;3.8s</td><td>&gt;7.3s</td><td>10%</td></tr>
+      <tr><td>tbtMs</td><td>Суммарное время блокировки main thread (&gt;50мс задачи)</td><td>&lt;200ms</td><td>&gt;600ms</td><td>30%</td></tr>
+      <tr><td>cls</td><td>Сдвиги макета при загрузке</td><td>&lt;0.1</td><td>&gt;0.25</td><td>25%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 8px;">
+      Score = взвешенная комбинация: TBT (30%) + CLS (25%) + LCP (25%) + SI (10%) + FCP (10%)
+    </p>
+  </section>
+</section>
+
+<!-- ==================== 5. RESOURCE TIMING + V8 ==================== -->
+<section>
+  <!-- 6.0 Overview -->
+  <section>
+    <h2>5. Resource Timing + V8 — 25 из 43 релевантных</h2>
+    <p>Самый насыщенный коллектор: 4 источника данных</p>
+    <div class="metric-grid" style="font-size: 0.65em;">
+      <div class="metric-card">
+        <span class="api-tag">Resource Timing API</span><br>
+        totalResources, transferSize, scripts, CSS<br>
+        <strong>6 релевантных</strong>
+      </div>
+      <div class="metric-card">
+        <span class="api-tag cdp">CDP Performance.getMetrics</span><br>
+        scriptDuration, heap, layout, recalcStyle<br>
+        <strong>11 релевантных</strong>
+      </div>
+      <div class="metric-card">
+        <span class="api-tag cdp">CDP Tracing</span><br>
+        GC events, V8.Parse, V8.Compile<br>
+        <strong>5 релевантных</strong>
+      </div>
+      <div class="metric-card">
+        <span class="api-tag">MFE Comparison</span><br>
+        chunks, largestChunk, uniqueDomains<br>
+        <strong>3 релевантных</strong>
+      </div>
+      <div class="metric-card" style="border-left-color: #95a5a6;">
+        <span style="color: #95a5a6;">Нерелевантные (18)</span><br>
+        api* (4), coverage (6), network (2), cache (2), http2/3% (2), sw* (2)
+      </div>
+    </div>
+  </section>
+
+  <!-- 6.1 Setup + Resource Timing API -->
+  <section>
+    <h2>5.1 Инициализация и Resource Timing API</h2>
+    <pre><code class="language-typescript">import puppeteer from 'puppeteer';
+
+const browser = await puppeteer.launch({ headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 1920, height: 1080 });
+
+// Подключаем Chrome DevTools Protocol
+const client = await page.target().createCDPSession();
+await client.send('Performance.enable');
+
+// Запускаем Tracing для GC и V8 Parse/Compile
+await client.send('Tracing.start', {
+  categories: 'v8,v8.gc,v8.compile,disabled-by-default-v8.gc',
+  transferMode: 'ReportEvents',
+});
+
+// Запускаем Code Coverage
+await client.send('Profiler.enable');
+await client.send('Profiler.startPreciseCoverage',
+  { callCount: true, detailed: true });
+await client.send('CSS.enable');
+await client.send('CSS.startRuleUsageTracking');
+
+// Загружаем страницу
+await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
+await new Promise(r => setTimeout(r, 1000)); // стабилизация</code></pre>
+  </section>
+
+  <!-- 6.2 Resource Timing metrics -->
+  <section>
+    <h2>5.2 Resource Timing API — 6 релевантных метрик</h2>
+    <pre><code class="language-typescript">// Собираем все загруженные ресурсы из браузера
+const entries = await page.evaluate(() => {
+  return (performance.getEntriesByType('resource') as PerformanceResourceTiming[])
+    .map(e => ({
+      name: e.name, initiatorType: e.initiatorType,
+      duration: e.duration, transferSize: e.transferSize,
+      responseStart: e.responseStart, responseEnd: e.responseEnd,
+    }));
+});
+const scripts = entries.filter(e => e.initiatorType === 'script');
+const css     = entries.filter(e => e.initiatorType === 'css' || e.initiatorType === 'link');</code></pre>
+    <table class="metric-table">
+      <tr><th>Метрика</th><th>Описание</th><th>Источник</th></tr>
+      <tr><td>totalResources</td><td>Общее количество загруженных ресурсов</td><td>entries.length</td></tr>
+      <tr><td>totalTransferSize</td><td>Суммарный объём переданных данных, байт</td><td>Σ entry.transferSize</td></tr>
+      <tr><td>scriptsCount</td><td>Количество загруженных JS-файлов</td><td>scripts.length</td></tr>
+      <tr><td>scriptsTotalSize</td><td>Суммарный размер всех JS-файлов, байт</td><td>Σ scripts.transferSize</td></tr>
+      <tr><td>cssCount</td><td>Количество загруженных CSS-файлов</td><td>css.length</td></tr>
+      <tr><td>cssTotalSize</td><td>Суммарный размер всех CSS-файлов, байт</td><td>Σ css.transferSize</td></tr>
+    </table>
+  </section>
+
+  <!-- 5.3 CDP Performance.getMetrics -->
+  <section>
+    <h2>5.3 CDP Performance.getMetrics — 11 релевантных метрик</h2>
+    <pre><code class="language-typescript">// Chrome DevTools Protocol: низкоуровневые метрики V8
+const { metrics } = await client.send('Performance.getMetrics');
+const get = (name: string) => metrics.find(m => m.name === name)?.value ?? 0;
+
+const payload = {
+  scriptDurationMs:      Math.round(get('ScriptDuration') * 1000),
+  taskDurationMs:        Math.round(get('TaskDuration') * 1000),
+  layoutDurationMs:      Math.round(get('LayoutDuration') * 1000),
+  recalcStyleDurationMs: Math.round(get('RecalcStyleDuration') * 1000),
+  jsHeapUsedSize:        Math.round(get('JSHeapUsedSize')),
+  jsHeapTotalSize:       Math.round(get('JSHeapTotalSize')),
+  layoutCount:           Math.round(get('LayoutCount')),
+  recalcStyleCount:      Math.round(get('RecalcStyleCount')),
+  domNodes:              Math.round(get('Nodes')),
+  jsEventListeners:      Math.round(get('JSEventListeners')),
+};
+payload.heapUsagePercent = Math.round(
+  (payload.jsHeapUsedSize / payload.jsHeapTotalSize) * 100
+);</code></pre>
+    <p style="font-size: 0.6em;">
+      Все 11 релевантны: MFE увеличивает layout/recalcStyle count, heap usage, task duration
+    </p>
+  </section>
+
+  <!-- 6.4 CDP Performance.getMetrics TABLE -->
+  <section>
+    <h2>5.3 CDP Performance: 11 релевантных метрик</h2>
+    <table class="metric-table">
+      <tr><th>Метрика</th><th>Описание</th><th>CDP source</th></tr>
+      <tr><td>scriptDurationMs</td><td>Время выполнения всего JS-кода, мс</td><td>ScriptDuration × 1000</td></tr>
+      <tr><td>taskDurationMs</td><td>Суммарное время всех задач main thread, мс</td><td>TaskDuration × 1000</td></tr>
+      <tr><td>jsHeapUsedSize</td><td>Использованная память JS heap, байт</td><td>JSHeapUsedSize</td></tr>
+      <tr><td>jsHeapTotalSize</td><td>Общий выделенный размер JS heap, байт</td><td>JSHeapTotalSize</td></tr>
+      <tr><td>heapUsagePercent</td><td>Процент использования JS heap</td><td>used / total × 100</td></tr>
+      <tr><td>layoutCount</td><td>Количество операций layout (перерасчёт позиций)</td><td>LayoutCount</td></tr>
+      <tr><td>layoutDurationMs</td><td>Суммарное время layout-операций, мс</td><td>LayoutDuration × 1000</td></tr>
+      <tr><td>recalcStyleCount</td><td>Количество пересчётов CSS-стилей</td><td>RecalcStyleCount</td></tr>
+      <tr><td>recalcStyleDurationMs</td><td>Суммарное время пересчёта стилей, мс</td><td>RecalcStyleDuration × 1000</td></tr>
+      <tr><td>domNodes</td><td>Количество DOM-узлов на странице</td><td>Nodes</td></tr>
+      <tr><td>jsEventListeners</td><td>Количество обработчиков событий</td><td>JSEventListeners</td></tr>
+    </table>
+  </section>
+
+  <!-- 6.5 GC + Parse/Compile -->
+  <section>
+    <h2>5.4 CDP Tracing: GC + JS Parse/Compile — 5 релевантных метрик</h2>
+    <pre><code class="language-typescript">// Tracing собирает V8 события во время загрузки страницы
+const gcEvents: { dur: number }[] = [];
+const compileEvents: { name: string; dur: number }[] = [];
+
+client.on('Tracing.dataCollected', (data) => {
+  for (const event of data.value || []) {
+    // GC события
+    if (event.cat?.includes('v8.gc') || event.name?.includes('GC')) {
+      gcEvents.push({ dur: event.dur ? event.dur / 1000 : 0 }); // μs → ms
+    }
+    // Parse и Compile события
+    if (event.cat?.includes('v8') &&
+        ['V8.Compile','V8.CompileCode','V8.Parse','V8.ParseFunction']
+          .includes(event.name)) {
+      compileEvents.push({ name: event.name, dur: event.dur ? event.dur / 1000 : 0 });
+    }
+  }
+});
+
+await client.send('Tracing.end');
+
+const gcCount          = gcEvents.length;
+const gcTotalDurationMs = Math.round(gcEvents.reduce((s, e) => s + e.dur, 0));
+const gcMaxDurationMs   = Math.round(Math.max(...gcEvents.map(e => e.dur)));
+
+const parseEvents   = compileEvents.filter(e => e.name.includes('Parse'));
+const compileOnly   = compileEvents.filter(e => e.name.includes('Compile'));
+const jsParseMs     = Math.round(parseEvents.reduce((s, e) => s + e.dur, 0));
+const jsCompileMs   = Math.round(compileOnly.reduce((s, e) => s + e.dur, 0));</code></pre>
+  </section>
+
+  <section>
+    <h2>5.4 GC + Parse/Compile: 5 релевантных метрик</h2>
+    <table class="metric-table">
+      <tr><th>Метрика</th><th>Описание</th><th>Источник (CDP Tracing)</th></tr>
+      <tr><td>gcCount</td><td>Количество сборок мусора V8</td><td>Кол-во событий v8.gc</td></tr>
+      <tr><td>gcTotalDurationMs</td><td>Суммарное время сборок мусора, мс</td><td>Σ event.dur (мкс→мс)</td></tr>
+      <tr><td>gcMaxDurationMs</td><td>Максимальная пауза одной сборки мусора, мс</td><td>Max event.dur</td></tr>
+      <tr><td>jsParseMs</td><td>Время парсинга JS-кода движком V8, мс</td><td>V8.Parse + V8.ParseFunction</td></tr>
+      <tr><td>jsCompileMs</td><td>Время компиляции JS-кода движком V8, мс</td><td>V8.Compile + V8.CompileCode</td></tr>
+    </table>
+    <br>
+    <p style="font-size: 0.7em;">
+      <strong>jsParseMs</strong> — ключевая метрика для MFE: 104 → 627 мс (×6)<br>
+      Больше JS файлов → больше затрат на парсинг каждого
+    </p>
+  </section>
+
+  <!-- 5.5 MFE Comparison -->
+  <section>
+    <h2>5.5 MFE Comparison — 3 релевантных метрики</h2>
+    <pre><code class="language-typescript">// Уникальные домены (MFE = 7+, монолит = 1-2)
+const domains = new Set&lt;string&gt;();
+for (const entry of entries) {
+  try { domains.add(new URL(entry.name).hostname); } catch {}
+}
+
+const uniqueDomains   = domains.size;
+const chunkedJsCount  = scripts.length;      // MFE ~44 vs монолит ~6
+const largestChunkSize = Math.max(...scripts.map(s => s.transferSize));</code></pre>
+    <table class="metric-table" style="margin-top: 10px;">
+      <tr><th>Метрика</th><th>Описание</th></tr>
+      <tr><td>chunkedJsCount</td><td>Количество JS-чанков</td></tr>
+      <tr><td>largestChunkSize</td><td>Размер самого большого JS-чанка, байт</td></tr>
+      <tr><td>uniqueDomains</td><td>Количество уникальных доменов ресурсов</td></tr>
+    </table>
+  </section>
+</section>
+
+<!-- ==================== 7. E2E ==================== -->
+<section>
+  <section>
+    <h2>6. E2E сценарий — 6 из 12 релевантных</h2>
+    <p><span class="api-tag cdp">Puppeteer</span> <span class="api-tag">PerformanceObserver</span></p>
+    <pre><code class="language-typescript">// Инжектим наблюдатели ДО загрузки страницы
+await page.evaluateOnNewDocument(() => {
+  // Long Tasks Observer
+  (window as any).__longTasks = [];
+  new PerformanceObserver((list) => {
+    (window as any).__longTasks.push(...list.getEntries());
+  }).observe({ type: 'longtask', buffered: true });
+
+  // Heap Memory Monitor (замер каждые 200мс)
+  (window as any).__heapMeter = {
+    timeline: [], running: false,
+    start() {
+      this.running = true;
+      this.intervalId = setInterval(() => {
+        const mem = (performance as any).memory;
+        if (mem) this.timeline.push({
+          usedSize: mem.usedJSHeapSize,
+          totalSize: mem.totalJSHeapSize,
+          usagePercent: Math.round(
+            (mem.usedJSHeapSize / mem.totalJSHeapSize) * 100),
+        });
+      }, 200);
+    },
+    stop() { /* ... возвращает avg/max из timeline */ }
+  };
+});</code></pre>
+  </section>
+
+  <section>
+    <h2>E2E: выполнение сценария</h2>
+    <pre><code class="language-typescript">// Загружаем страницу, запускаем мониторы
+await page.goto(scenario.url, { waitUntil: 'networkidle0' });
+await page.evaluate(() => {
+  (window as any).__heapMeter?.start();
+});
+
+// Выполняем шаги сценария: click, type, wait...
+for (const step of scenario.steps) {
+  await page.waitForSelector(step.selector, { timeout: 10000 });
+  const inputDelayMs = Date.now() - actionStart; // время ожидания элемента
+
+  switch (step.action) {
+    case 'click': await page.click(step.selector); break;
+    case 'type':  await page.type(step.selector, step.value, { delay: 50 }); break;
+  }
+
+  // Собираем Long Tasks после каждого шага
+  const longTasks = await page.evaluate(() => (window as any).__longTasks);
+}
+
+// Останавливаем мониторы, агрегируем результаты
+const heap = await page.evaluate(() => (window as any).__heapMeter?.stop());</code></pre>
+  </section>
+
+  <section>
+    <h2>E2E: 6 релевантных метрик</h2>
+    <table class="metric-table">
+      <tr><th>Метрика</th><th>Описание</th><th>Как считается</th></tr>
+      <tr><td>scenarioDurationMs</td><td>Время выполнения шагов (без загрузки), мс</td><td>Date.now() - scenarioStart</td></tr>
+      <tr><td>totalLongTasksMs</td><td>Суммарное время Long Tasks, мс</td><td>Σ entry.duration</td></tr>
+      <tr><td>avgInputDelayMs</td><td>Средняя задержка отклика на действие пользователя, мс</td><td>Среднее waitForSelector - actionStart</td></tr>
+      <tr><td>maxInputDelayMs</td><td>Максимальная задержка отклика, мс</td><td>Max по всем шагам</td></tr>
+      <tr><td>avgHeapUsagePercent</td><td>Среднее использование памяти, %</td><td>Avg из performance.memory timeline</td></tr>
+      <tr><td>maxHeapUsagePercent</td><td>Пиковое использование памяти, %</td><td>Max из timeline</td></tr>
+    </table>
+    <p style="font-size: 0.6em;">Нерелевантны (6): totalDurationMs (дублирует Nav Timing), totalLongTasks/FPS/droppedFrames (нет разницы в эксперименте)</p>
+  </section>
+</section>
+
+<!-- ==================== 8. BUNDLE ==================== -->
+<section>
+  <section>
+    <h2>7. Bundle Analysis — 7 из 10 релевантных</h2>
+    <p><span class="api-tag node">Node.js fs</span> <span class="api-tag node">zlib</span></p>
+    <pre><code class="language-typescript">import { readdirSync, readFileSync, statSync } from 'fs';
+import { gzipSync } from 'zlib';
+import { join, extname } from 'path';
+
+// Рекурсивный обход директории сборки
+function getAllFiles(dir: string): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  return entries.flatMap(e =>
+    e.isDirectory() ? getAllFiles(join(dir, e.name)) : [join(dir, e.name)]
+  );
+}
+
+// Анализ каждого файла
+function analyzeBundleDir(dir: string) {
+  const files = getAllFiles(dir);
+  let totalSize = 0, totalGzip = 0;
+
+  const byType: Record&lt;string, { count: number; size: number }&gt; = {};
+
+  for (const file of files) {
+    const size = statSync(file).size;
+    const content = readFileSync(file);
+    const gzip = gzipSync(content).length;
+    const type = getFileType(extname(file)); // 'js' | 'css' | 'images' | ...
+
+    totalSize += size;
+    totalGzip += gzip;
+    byType[type] = byType[type] || { count: 0, size: 0 };
+    byType[type].count++;
+    byType[type].size += size;
+  }
+
+  return { totalSize, totalGzip, fileCount: files.length, byType };
+}</code></pre>
+  </section>
+
+  <section>
+    <h2>Bundle: Runtime Size и дедупликация</h2>
+    <pre><code class="language-typescript">// Для MFE: вычисляем Runtime Size с учётом shared deps
+// Module Federation загружает Vue, Pinia один раз (shared)
+// Но каждый MFE содержит их в своём бандле на диске
+
+function calculateRuntimeSize(mfeMetrics: MfeMetrics[]) {
+  const sharedDeps = ['vue', 'pinia', 'vue-router'];
+  let duplicatedSize = 0;
+
+  // Находим дубликаты: shared dep встречается > 1 раза
+  for (const dep of sharedDeps) {
+    const occurrences = mfeMetrics.filter(m =>
+      m.chunks.some(c => c.name.includes(dep))
+    );
+    if (occurrences.length > 1) {
+      // Все кроме первого — дубликаты
+      const sizes = occurrences.slice(1).map(m =>
+        m.chunks.find(c => c.name.includes(dep))!.gzip);
+      duplicatedSize += sizes.reduce((a, b) => a + b, 0);
+    }
+  }
+
+  return totalMfeGzip - duplicatedSize; // приближение к реальной загрузке
+}
+
+// Entry JS = размер главного чанка (index-*.js)
+const entryChunk = chunks.find(c => c.name.startsWith('index'));
+const entryJsGzip = gzipSync(readFileSync(entryChunk.path)).length;</code></pre>
+  </section>
+
+  <section>
+    <h2>Bundle: 7 релевантных метрик</h2>
+    <table class="metric-table">
+      <tr><th>Метрика</th><th>Описание</th><th>Как считается</th></tr>
+      <tr><td>totalSize</td><td>Полный размер бандла на диске, байт</td><td>Σ statSync(file).size</td></tr>
+      <tr><td>totalGzip</td><td>Размер бандла после gzip-сжатия, байт</td><td>Σ gzipSync(content).length</td></tr>
+      <tr><td>fileCount</td><td>Общее количество файлов в сборке</td><td>getAllFiles(dir).length</td></tr>
+      <tr><td>jsChunksCount</td><td>Количество JS-чанков</td><td>files.filter(f => f.endsWith('.js')).length</td></tr>
+      <tr><td>runtimeSize / runtimeGzip</td><td>Реальный размер загрузки с учётом дедупликации</td><td>totalGzip - duplicatedSharedDeps</td></tr>
+      <tr><td>{type}.size/gzip</td><td>Разбивка размеров по типу файлов (JS/CSS/img/fonts)</td><td>Группировка по расширению</td></tr>
+      <tr><td>entryPointGzip</td><td>Размер точки входа (index.js) после gzip, байт</td><td>gzipSync(index-*.js)</td></tr>
+    </table>
+  </section>
+</section>
+
+<!-- ==================== METHODOLOGY ==================== -->
+<section>
+  <h2>Методика измерений</h2>
+  <table style="font-size: 0.7em;">
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td>Кэш браузера</td><td>Отключён (incognito)</td></tr>
+    <tr><td>Throttling</td><td>Отключён (реальная сеть)</td></tr>
+    <tr><td>Viewport</td><td>1920 × 1080 (Desktop)</td></tr>
+    <tr><td>Ожидание загрузки</td><td><code>networkidle0</code> (0 запросов 500мс)</td></tr>
+    <tr><td>Стабилизация</td><td>500–1000мс после загрузки</td></tr>
+    <tr><td>Повторений</td><td>10 прогонов на URL</td></tr>
+    <tr><td>Агрегация</td><td>Медиана (основной), Среднее, P95</td></tr>
+  </table>
+  <br>
+  <p style="font-size: 0.7em;">
+    Последовательность: Ping → TTFB → Navigation Timing → Resource Timing → Lighthouse → FPS → E2E
+  </p>
+</section>
+
+<!-- ==================== RESULTS ==================== -->
+<section>
+  <section>
+    <h2>Результаты: Navigation Timing</h2>
+    <h3>Холодный замер (первый запрос)</h3>
+    <table>
+      <tr><th>Метрика</th><th>Монолит</th><th>MFE</th><th>Δ%</th></tr>
+      <tr><td>DNS, мс</td><td>0</td><td>63</td><td class="delta-bad">MFE +63мс</td></tr>
+      <tr><td>Connect, мс</td><td>0</td><td>89</td><td class="delta-bad">MFE +89мс</td></tr>
+      <tr><td>SSL/TLS, мс</td><td>0</td><td>49</td><td class="delta-bad">MFE +49мс</td></tr>
+      <tr><td>DOM parse, мс</td><td>241</td><td>309</td><td class="delta-bad">-28%</td></tr>
+      <tr><td>Scripts, мс</td><td>585</td><td>132</td><td class="delta-good">+77%</td></tr>
+      <tr><td>DOMContentLoaded</td><td>906</td><td>643</td><td class="delta-good">+29%</td></tr>
+      <tr><td>Load, мс</td><td>1109</td><td>643</td><td class="delta-good">+42%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      Монолит: 0 мс на DNS/TCP — один домен. MFE: дополнительные DNS-запросы к доменам MFE
+    </p>
+  </section>
+
+  <section>
+    <h2>Результаты: Navigation Timing</h2>
+    <h3>Тёплый замер (среднее замеров 2–10)</h3>
+    <table>
+      <tr><th>Метрика</th><th>Монолит</th><th>MFE</th><th>Δ%</th></tr>
+      <tr><td>Total, мс</td><td>1097</td><td>376</td><td class="delta-good">+66%</td></tr>
+      <tr><td>DOM parse, мс</td><td>206</td><td>248</td><td class="delta-bad">-20%</td></tr>
+      <tr><td>Scripts, мс</td><td>700</td><td>114</td><td class="delta-good">+84%</td></tr>
+      <tr><td>Resources, мс</td><td>142</td><td>0</td><td class="delta-good">+100%</td></tr>
+      <tr><td>DOMContentLoaded</td><td>955</td><td>376</td><td class="delta-good">+61%</td></tr>
+      <tr><td>Load, мс</td><td>1097</td><td>376</td><td class="delta-good">+66%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      В тёплом режиме MFE <strong>в 2.9 раза быстрее</strong> по Load — маленький entry shell
+    </p>
+  </section>
+
+  <section>
+    <h2>Результаты: Lighthouse</h2>
+    <table>
+      <tr><th>Метрика</th><th>Монолит</th><th>MFE</th><th>Δ%</th></tr>
+      <tr><td>Speed Index, мс</td><td>1857</td><td>3078</td><td class="delta-bad">-65.8%</td></tr>
+      <tr><td>FCP, мс</td><td>1857</td><td>2109</td><td class="delta-bad">-13.6%</td></tr>
+      <tr><td>LCP, мс</td><td>4033</td><td>6132</td><td class="delta-bad">-52.1%</td></tr>
+      <tr><td>TTI, мс</td><td>4059</td><td>6144</td><td class="delta-bad">-51.3%</td></tr>
+      <tr><td>TBT, мс</td><td>155</td><td>221</td><td class="delta-bad">-42.6%</td></tr>
+      <tr><td>CLS</td><td>0.09</td><td>0.09</td><td class="delta-neutral">0%</td></tr>
+      <tr><td>Performance Score</td><td>64</td><td>51.5</td><td class="delta-bad">-19.5%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      MFE проигрывает по Lighthouse: хуже SI, FCP, LCP, TTI, TBT и итоговый Score
+    </p>
+  </section>
+
+  <section>
+    <h2>Результаты: Resource Timing + V8</h2>
+    <h3>Ресурсы и сеть</h3>
+    <table>
+      <tr><th>Метрика</th><th>Монолит</th><th>MFE</th><th>Δ%</th></tr>
+      <tr><td>Resources, шт</td><td>42</td><td>69</td><td class="delta-bad">-64%</td></tr>
+      <tr><td>Transfer Size, байт</td><td>552 432</td><td>680 150</td><td class="delta-bad">-23%</td></tr>
+      <tr><td>Scripts Count</td><td>6</td><td>35</td><td class="delta-bad">-483%</td></tr>
+      <tr><td>Scripts Size, байт</td><td>174 124</td><td>290 751</td><td class="delta-bad">-67%</td></tr>
+      <tr><td>Unique Domains</td><td>2</td><td>5</td><td class="delta-bad">-150%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      MFE: больше ресурсов, больший Transfer Size, в 6 раз больше скриптов и 5 доменов
+    </p>
+  </section>
+
+  <section>
+    <h2>Результаты: Resource Timing + V8</h2>
+    <h3>Обработка JS и рендеринг</h3>
+    <table>
+      <tr><th>Метрика</th><th>Монолит</th><th>MFE</th><th>Δ%</th></tr>
+      <tr><td>JS Parse, мс</td><td>144.1</td><td>335.2</td><td class="delta-bad">-133%</td></tr>
+      <tr><td>JS Compile, мс</td><td>47.6</td><td>130.8</td><td class="delta-bad">-175%</td></tr>
+      <tr><td>Task Duration, мс</td><td>294</td><td>573</td><td class="delta-bad">-95%</td></tr>
+      <tr><td>Layout Count</td><td>4.2</td><td>8.5</td><td class="delta-bad">-102%</td></tr>
+      <tr><td>Recalc Style Count</td><td>6.2</td><td>17.6</td><td class="delta-bad">-184%</td></tr>
+      <tr><td>JS Heap Used, MB</td><td>3.38</td><td>5.15</td><td class="delta-bad">-52%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      <strong>Ключевой механизм:</strong> JS Parse в 2.3 раза дороже — узкое место в обработке, не в сети
+    </p>
+  </section>
+
+  <section>
+    <h2>Результаты: E2E сценарий</h2>
+    <p style="font-size: 0.75em;">Сценарий «Заказ пиццы» — имитация действий пользователя</p>
+    <table>
+      <tr><th>Метрика</th><th>Монолит</th><th>MFE</th><th>Δ%</th></tr>
+      <tr><td>Scenario Duration, мс</td><td>3936</td><td>3946</td><td class="delta-neutral">-0.3%</td></tr>
+      <tr><td>Avg Input Delay, мс</td><td>5.0</td><td>5.7</td><td class="delta-bad">-14%</td></tr>
+      <tr><td>Max Input Delay, мс</td><td>8.1</td><td>9.4</td><td class="delta-bad">-16%</td></tr>
+      <tr><td>Total Long Tasks, мс</td><td>0</td><td>0</td><td class="delta-neutral">0%</td></tr>
+      <tr><td>Avg Heap Usage, %</td><td>69.6</td><td>69.9</td><td class="delta-neutral">-0.4%</td></tr>
+      <tr><td>Max Heap Usage, %</td><td>73.9</td><td>73.8</td><td class="delta-neutral">+0.1%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      Функциональная скорость практически одинакова, разница в пределах погрешности
+    </p>
+  </section>
+
+  <section>
+    <h2>Результаты: Bundle Analysis</h2>
+    <table>
+      <tr><th>Метрика</th><th>Монолит</th><th>MFE</th><th>Δ%</th></tr>
+      <tr><td>Total Size</td><td>1.18 MB</td><td>3.11 MB</td><td class="delta-bad">+163.6%</td></tr>
+      <tr><td>Total Size (gzip)</td><td>621.92 KB</td><td>1.26 MB</td><td class="delta-bad">+107.9%</td></tr>
+      <tr><td>Runtime Size (gzip)</td><td>621.92 KB</td><td>998.08 KB</td><td class="delta-bad">+60.5%</td></tr>
+      <tr><td>File Count</td><td>91</td><td>217</td><td class="delta-bad">+138.5%</td></tr>
+      <tr><td>JS Chunks</td><td>13</td><td>72</td><td class="delta-bad">+453.8%</td></tr>
+      <tr><td>Entry JS (gzip)</td><td>59.07 KB</td><td>18.63 KB</td><td class="delta-good">-68.5%</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      Entry shell MFE в 3.2 раза легче → быстрый старт.<br>
+      Но суммарно MFE в 2.6 раза тяжелее (на диске), runtime +60.5%
+    </p>
+  </section>
+
+  <section>
+    <h2>Результаты: Size by Asset Type</h2>
+    <table>
+      <tr><th>Тип</th><th>Монолит (файлов / размер)</th><th>MFE (файлов / размер)</th><th>Δ размер</th></tr>
+      <tr><td>JavaScript</td><td>13 / 200.41 KB</td><td>72 / 1.71 MB</td><td class="delta-bad">+753%</td></tr>
+      <tr><td>CSS</td><td>11 / 51.32 KB</td><td>7 / 81.69 KB</td><td class="delta-bad">+59%</td></tr>
+      <tr><td>Images</td><td>60 / 698.43 KB</td><td>98 / 1.06 MB</td><td class="delta-bad">+52%</td></tr>
+      <tr><td>Fonts</td><td>6 / 255.59 KB</td><td>6 / 255.59 KB</td><td class="delta-neutral">0%</td></tr>
+      <tr><td>HTML</td><td>1 / 1.08 KB</td><td>6 / 5.48 KB</td><td class="delta-bad">+408%</td></tr>
+    </table>
+    <br>
+    <p style="font-size: 0.75em;">
+      Главная проблема — <strong>JS-фрагментация</strong>:<br>
+      72 чанка вместо 13, объём JS вырос в 8.5 раз
+    </p>
+  </section>
+
+  <section>
+    <h2>Размеры каждого микрофронта</h2>
+    <table>
+      <tr><th>Микрофронт</th><th>Чанков</th><th>Размер (raw)</th><th>Размер (gzip)</th></tr>
+      <tr><td>shell</td><td>10</td><td>559.0 KB</td><td>128.2 KB</td></tr>
+      <tr><td>cart</td><td>12</td><td>257.3 KB</td><td>96.9 KB</td></tr>
+      <tr><td>pizza-builder</td><td>13</td><td>229.7 KB</td><td>86.8 KB</td></tr>
+      <tr><td>profile</td><td>12</td><td>250.1 KB</td><td>94.9 KB</td></tr>
+      <tr><td>order</td><td>12</td><td>221.7 KB</td><td>84.2 KB</td></tr>
+      <tr><td>auth</td><td>13</td><td>217.6 KB</td><td>83.2 KB</td></tr>
+    </table>
+    <p style="font-size: 0.65em; margin-top: 10px;">
+      Vue (~107 KB) и Pinia (~5.6 KB) дублируются в каждом MFE на диске,<br>
+      но при runtime загружаются <strong>только 1 раз</strong> через Module Federation shared
+    </p>
+  </section>
+</section>
+
+<!-- ==================== KEY FINDINGS ==================== -->
+<section>
+  <section>
+    <h2>Ключевые наблюдения</h2>
+    <div class="metric-grid" style="font-size: 0.75em;">
+      <div class="metric-card good">
+        <strong>MFE быстрее</strong><br>
+        DOMContentLoaded: <span class="highlight-green">+61%</span><br>
+        Load: <span class="highlight-green">+65%</span><br>
+        Entry JS: <span class="highlight-green">18.6 KB vs 59 KB</span>
+      </div>
+      <div class="metric-card bad">
+        <strong>MFE медленнее</strong><br>
+        JS Parse: <span class="highlight-red">×2.3</span><br>
+        TTI: <span class="highlight-red">-51%</span><br>
+        Performance Score: <span class="highlight-red">51.5 vs 64</span>
+      </div>
+      <div class="metric-card good">
+        <strong>MFE: выигрыш</strong><br>
+        E2E: <span class="highlight-green">3946 ≈ 3936 мс</span><br>
+        Input Delay: <span class="highlight-green">5.7 ≈ 5.0 мс</span><br>
+        Heap: <span class="highlight-green">69.9 ≈ 69.6%</span>
+      </div>
+      <div class="metric-card bad">
+        <strong>MFE проигрывает</strong><br>
+        Transfer Size: <span class="highlight-red">680 vs 552 KB</span><br>
+        Scripts Count: <span class="highlight-red">35 vs 6</span><br>
+        LCP: <span class="highlight-red">6132 vs 4033 мс</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Причинно-следственная цепочка</h2>
+    <pre style="text-align: left;">
+  Entry Shell маленький (18.6 KB gzip)
+       │
+       ▼
+  DOMContentLoaded / Load быстрее ✓
+       │
+       ▼
+  Shell загружает только нужные MFE (3 из 6): 35 скриптов с 5 доменов
+       │
+       ├── JS Parse ×2.3 (144 → 335 мс)
+       ├── JS Compile ×2.7 (48 → 131 мс)
+       ├── Layout Count ×2.0 (4.2 → 8.5)
+       └── Recalc Style ×2.8 (6.2 → 18)
+              │
+              ▼
+        Task Duration ×1.95 (294 → 573 мс)
+              │
+              ▼
+  TTI, TBT, Speed Index, LCP ухудшаются
+              │
+              ▼
+  Lighthouse Score: 64 → 51.5 (-19.5%)</pre>
+    <p style="font-size: 0.7em;">
+      Даже 3 из 6 MFE дают кратный рост обработки.<br>
+      Узкое место — не сеть, а <strong>парсинг и компиляция JS в браузере</strong>
+    </p>
+  </section>
+</section>
+
+<!-- ==================== CONCLUSIONS ==================== -->
+<section>
+  <section>
+    <h2>Выводы</h2>
+    <div class="conclusion-box" style="font-size: 0.8em;">
+      <ol>
+        <li><strong>Быстрый старт оболочки</strong> — MFE выигрывает по DOMContentLoaded (+61%) и Load (+65%) за счёт маленького entry shell (18.6 vs 59 KB)</li>
+        <br>
+        <li><strong>Проигрыш по Lighthouse</strong> — ухудшение SI, FCP, LCP, TTI, TBT и итогового Performance Score (-19.5%) из-за отложенной загрузки модулей</li>
+        <br>
+        <li><strong>Корень проблемы — JS обработка</strong> — даже при загрузке 3 из 6 MFE: JS Parse ×2.3, JS Compile ×2.7, Task Duration ×1.95 (35 скриптов с 5 доменов)</li>
+        <br>
+        <li><strong>E2E сопоставимо</strong> — функциональная скорость практически одинакова, разница в пределах погрешности</li>
+        <br>
+        <li><strong>Bundle</strong> — entry shell в 3.2 раза легче, но суммарно MFE в 2.6 раза тяжелее (runtime +60.5%)</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>Итог</h2>
+    <br>
+    <p style="font-size: 0.9em;">
+      Микрофронтенды дают <span class="highlight-green">организационные преимущества</span><br>
+      и <span class="highlight-green">быстрый старт</span>,<br><br>
+      но приносят <span class="highlight-red">измеримые затраты производительности</span><br>
+      на уровне обработки JavaScript в браузере.
+    </p>
+    <br>
+    <p style="font-size: 0.8em;">
+      Решение о применении MFE должно учитывать<br>
+      масштаб команды и сложность приложения.
+    </p>
+  </section>
+
+  <section>
+    <h2>Стенд доступен онлайн</h2>
+    <br>
+    <table style="font-size: 0.8em;">
+      <tr><td>Монолит</td><td><code>pizza.ew-production.ru</code></td></tr>
+      <tr><td>Микрофронтенды</td><td><code>micro.pizza.ew-production.ru</code></td></tr>
+      <tr><td>Сервис метрик</td><td><code>metric.pizza.ew-production.ru</code></td></tr>
+    </table>
+    <br><br>
+    <p style="font-size: 0.9em;">Спасибо за внимание!</p>
+  </section>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    width: 1280,
+    height: 720,
+    margin: 0.04,
+    transition: 'slide',
+    transitionSpeed: 'default',
+    plugins: [RevealHighlight],
+  });
+</script>
+</body>
+</html>

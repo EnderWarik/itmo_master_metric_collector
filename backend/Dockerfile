@@ -1,5 +1,7 @@
 FROM node:20-slim AS base
 WORKDIR /app
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 COPY package*.json ./
 
 FROM base AS deps

@@ -10,30 +10,22 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Setup SSH key
+      - name: Pull latest code
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          REPO_URL="https://${{ secrets.VCS_TOKEN }}@gitverse.ru/EnderWar/itmo_master_metric_pizza_collector.git"
+          DEPLOY_DIR="/root/metrics"
 
-      - name: Deploy on server
+          if [ -d "$DEPLOY_DIR/.git" ]; then
+            cd "$DEPLOY_DIR"
+            git remote set-url origin "$REPO_URL"
+            git pull origin main
+          else
+            git clone "$REPO_URL" "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+          fi
+
+      - name: Build and restart containers
         run: |
-          ssh -i ~/.ssh/id_ed25519 \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "
-              REPO_URL='https://${{ secrets.VCS_TOKEN }}@gitverse.ru/EnderWar/itmo_master_metric_pizza_collector.git'
-              DEPLOY_DIR='/root/metrics'
-
-              if [ -d \"\$DEPLOY_DIR/.git\" ]; then
-                cd \$DEPLOY_DIR
-                git remote set-url origin \$REPO_URL
-                git pull origin main
-              else
-                git clone \$REPO_URL \$DEPLOY_DIR
-                cd \$DEPLOY_DIR
-              fi
-
-              docker compose -f docker-compose.prod.yml build
-              docker compose -f docker-compose.prod.yml up -d
-            "
+          cd /root/metrics
+          docker compose -f docker-compose.prod.yml build
+          docker compose -f docker-compose.prod.yml up -d

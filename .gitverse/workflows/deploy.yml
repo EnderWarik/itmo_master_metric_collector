@@ -22,7 +22,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "
-              REPO_URL='https://${{ secrets.GITVERSE_TOKEN }}@gitverse.ru/EnderWar/itmo_master_metric_pizza_collector.git'
+              REPO_URL='https://${{ secrets.VCS_TOKEN }}@gitverse.ru/EnderWar/itmo_master_metric_pizza_collector.git'
               DEPLOY_DIR='/root/metrics'
 
               if [ -d \"\$DEPLOY_DIR/.git\" ]; then

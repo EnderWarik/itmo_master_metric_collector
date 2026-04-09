@@ -24,8 +24,17 @@ jobs:
             git clone "$REPO_URL" "$DEPLOY_DIR"
           fi
 
-      - name: Build and restart containers
+      - name: Build backend
         run: |
           cd /root/metrics
-          docker compose -f docker-compose.prod.yml build
+          docker compose -f docker-compose.prod.yml build metrics-backend
+
+      - name: Build frontend
+        run: |
+          cd /root/metrics
+          docker compose -f docker-compose.prod.yml build metrics-frontend
+
+      - name: Start containers
+        run: |
+          cd /root/metrics
           docker compose -f docker-compose.prod.yml up -d

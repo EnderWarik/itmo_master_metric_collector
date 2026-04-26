@@ -1,14 +1,9 @@
-FROM node:20-slim AS base
+FROM node:20-slim AS builder
 WORKDIR /app
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 COPY package*.json ./
-
-FROM base AS deps
 RUN npm ci
-
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build && npm prune --omit=dev
 

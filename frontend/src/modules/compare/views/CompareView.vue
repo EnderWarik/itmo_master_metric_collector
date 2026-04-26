@@ -16,6 +16,7 @@ const form = reactive({
   runE2E: true,
   repeatCount: 3,
   interleaved: true,
+  includeColdRun: true,
 });
 
 interface StabilityStat {
@@ -165,6 +166,13 @@ async function handleCompare() {
   const e2eB: E2EResult[] = [];
 
   try {
+    if (!form.includeColdRun) {
+      progress.value = `Прогрев ${form.labelA}...`;
+      await metricsApi.collectAll({ url: form.urlA });
+      progress.value = `Прогрев ${form.labelB}...`;
+      await metricsApi.collectAll({ url: form.urlB });
+    }
+
     if (form.interleaved) {
       for (let i = 0; i < form.repeatCount; i++) {
         const a = await singleRun(form.urlA, form.labelA, i + 1, form.repeatCount);
@@ -449,6 +457,10 @@ function exportCSV() {
             <label class="checkbox-label" title="A/B/A/B... вместо AAAA.../BBBB...">
               <input type="checkbox" v-model="form.interleaved">
               <span>Чередование A/B</span>
+            </label>
+            <label class="checkbox-label" title="Если выключено: первый прогревочный замер выбрасывается, в результат идут только тёплые">
+              <input type="checkbox" v-model="form.includeColdRun">
+              <span>Учитывать холодный замер</span>
             </label>
             <div class="repeat-row">
               <span>Повторений:</span>

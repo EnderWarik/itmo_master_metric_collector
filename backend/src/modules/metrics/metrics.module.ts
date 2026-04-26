@@ -10,12 +10,14 @@ import { LighthouseMetricCollector } from './collectors/lighthouse-metric.collec
 import { FpsMetricCollector } from './collectors/fps-metric.collector';
 import { ResourceTimingCollector } from './collectors/resource-timing.collector';
 import { E2EMetricCollector } from './collectors/e2e-metric.collector';
+import { TaskRegistry } from './task-registry.service';
 
 @Module({
   controllers: [MetricsController],
   providers: [
     MetricsService,
     MetricRegistry,
+    TaskRegistry,
     PingMetricCollector,
     TtfbMetricCollector,
     DomMetricCollector,

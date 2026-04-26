@@ -9,6 +9,7 @@ import ScenarioRecorder from '../components/ScenarioRecorder.vue';
 import E2EResultsPanel from '../components/E2EResultsPanel.vue';
 import { useMetricRunner } from '../composables/useMetricRunner';
 import { metricsApi, type Scenario, type E2EResult } from '../services/metricsApi';
+import { median } from '@/shared/utils/stats';
 
 const {
   definitions,
@@ -119,9 +120,8 @@ const e2eAllResults = ref<E2EResult[]>([]);
 const isE2ERunning = ref(false);
 const e2eProgress = ref({ current: 0, total: 0 });
 
-// Функция усреднения результатов
-function avg(nums: number[]): number {
-  return nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length) : 0;
+function med(nums: number[]): number {
+  return Math.round(median(nums));
 }
 
 function averageE2EResults(results: E2EResult[]): E2EResult | null {
@@ -129,23 +129,23 @@ function averageE2EResults(results: E2EResult[]): E2EResult | null {
   const first = results[0];
   if (!first) return null;
   if (results.length === 1) return first;
-  
+
   return {
     scenarioName: first.scenarioName,
     url: first.url,
     steps: first.steps,
-    totalDurationMs: avg(results.map(r => r.totalDurationMs)),
-    scenarioDurationMs: avg(results.map(r => r.scenarioDurationMs)),
-    totalLongTasks: avg(results.map(r => r.totalLongTasks)),
-    totalLongTasksMs: avg(results.map(r => r.totalLongTasksMs)),
-    avgInputDelayMs: avg(results.map(r => r.avgInputDelayMs)),
-    maxInputDelayMs: avg(results.map(r => r.maxInputDelayMs)),
-    avgFps: avg(results.filter(r => r.avgFps).map(r => r.avgFps!)),
-    minFps: avg(results.filter(r => r.minFps).map(r => r.minFps!)),
-    totalFrames: avg(results.filter(r => r.totalFrames).map(r => r.totalFrames!)),
-    droppedFrames: avg(results.filter(r => r.droppedFrames).map(r => r.droppedFrames!)),
-    avgHeapUsagePercent: avg(results.filter(r => r.avgHeapUsagePercent).map(r => r.avgHeapUsagePercent!)),
-    maxHeapUsagePercent: avg(results.filter(r => r.maxHeapUsagePercent).map(r => r.maxHeapUsagePercent!)),
+    totalDurationMs: med(results.map(r => r.totalDurationMs)),
+    scenarioDurationMs: med(results.map(r => r.scenarioDurationMs)),
+    totalLongTasks: med(results.map(r => r.totalLongTasks)),
+    totalLongTasksMs: med(results.map(r => r.totalLongTasksMs)),
+    avgInputDelayMs: med(results.map(r => r.avgInputDelayMs)),
+    maxInputDelayMs: med(results.map(r => r.maxInputDelayMs)),
+    avgFps: med(results.filter(r => r.avgFps).map(r => r.avgFps!)),
+    minFps: med(results.filter(r => r.minFps).map(r => r.minFps!)),
+    totalFrames: med(results.filter(r => r.totalFrames).map(r => r.totalFrames!)),
+    droppedFrames: med(results.filter(r => r.droppedFrames).map(r => r.droppedFrames!)),
+    avgHeapUsagePercent: med(results.filter(r => r.avgHeapUsagePercent).map(r => r.avgHeapUsagePercent!)),
+    maxHeapUsagePercent: med(results.filter(r => r.maxHeapUsagePercent).map(r => r.maxHeapUsagePercent!)),
     success: results.every(r => r.success),
   };
 }

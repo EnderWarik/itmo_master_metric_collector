@@ -6,6 +6,7 @@ import InputField from '@/shared/ui/InputField.vue';
 import ButtonPrimary from '@/shared/ui/ButtonPrimary.vue';
 import type { MetricResult } from '@/shared/types/metrics';
 import { metricsApi, type E2EResult, type Scenario } from '@/modules/metrics/services/metricsApi';
+import { median, stdDev, coefficientOfVariation } from '@/shared/utils/stats';
 
 const form = reactive({
   urlA: '',
@@ -14,7 +15,21 @@ const form = reactive({
   labelB: 'Site B',
   runE2E: true,
   repeatCount: 3,
+  interleaved: true,
 });
+
+interface StabilityStat {
+  metric: string;
+  meanA: number;
+  sigmaA: number;
+  cvA: number;
+  meanB: number;
+  sigmaB: number;
+  cvB: number;
+}
+
+const stabilityA = ref<{ pings: number[]; ttfbs: number[] }>({ pings: [], ttfbs: [] });
+const stabilityB = ref<{ pings: number[]; ttfbs: number[] }>({ pings: [], ttfbs: [] });
 
 const isRunning = ref(false);
 const progress = ref('');
@@ -43,99 +58,96 @@ const pizzaScenario = (url: string): Scenario => ({
   ],
 });
 
-function avg(nums: number[]): number {
-  return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
-}
-
-function averageMetrics(runs: MetricResult[][]): MetricResult[] {
+function aggregateMetrics(runs: MetricResult[][]): MetricResult[] {
   if (!runs.length) return [];
   const first = runs[0]!;
   return first.map((metric, idx) => {
     const payloads = runs.map(r => r[idx]?.payload as Record<string, unknown>).filter(Boolean);
     if (!payloads.length) return metric;
-    const averaged: Record<string, unknown> = {};
+    const aggregated: Record<string, unknown> = {};
     for (const key of Object.keys(payloads[0]!)) {
       const vals = payloads.map(p => p[key]).filter(v => typeof v === 'number') as number[];
       if (vals.length === payloads.length) {
-        averaged[key] = avg(vals);
+        aggregated[key] = median(vals);
       } else {
-        averaged[key] = payloads[0]![key];
+        aggregated[key] = payloads[0]![key];
       }
     }
-    // Handle nested timing objects
     const firstPayload = payloads[0] as Record<string, unknown>;
     for (const key of Object.keys(firstPayload)) {
       if (typeof firstPayload[key] === 'object' && firstPayload[key] !== null && !Array.isArray(firstPayload[key])) {
         const nested = firstPayload[key] as Record<string, unknown>;
-        const avgNested: Record<string, unknown> = {};
+        const aggNested: Record<string, unknown> = {};
         for (const nk of Object.keys(nested)) {
           const nvals = payloads.map(p => (p[key] as Record<string, unknown>)?.[nk]).filter(v => typeof v === 'number') as number[];
           if (nvals.length === payloads.length) {
-            avgNested[nk] = avg(nvals);
+            aggNested[nk] = median(nvals);
           } else {
-            avgNested[nk] = nested[nk];
+            aggNested[nk] = nested[nk];
           }
         }
-        averaged[key] = avgNested;
+        aggregated[key] = aggNested;
       }
     }
-    return { ...metric, payload: averaged };
+    return { ...metric, payload: aggregated };
   });
 }
 
-function averageE2E(runs: E2EResult[]): E2EResult | null {
+function aggregateE2E(runs: E2EResult[]): E2EResult | null {
   const valid = runs.filter(r => r.success);
   if (!valid.length) return null;
   if (valid.length === 1) return valid[0]!;
   const f = valid[0]!;
+  const med = (arr: number[]) => median(arr);
   return {
     ...f,
-    totalDurationMs: Math.round(avg(valid.map(r => r.totalDurationMs))),
-    scenarioDurationMs: Math.round(avg(valid.map(r => r.scenarioDurationMs))),
-    totalLongTasks: Math.round(avg(valid.map(r => r.totalLongTasks))),
-    totalLongTasksMs: Math.round(avg(valid.map(r => r.totalLongTasksMs))),
-    avgInputDelayMs: +avg(valid.map(r => r.avgInputDelayMs)).toFixed(1),
-    maxInputDelayMs: +avg(valid.map(r => r.maxInputDelayMs)).toFixed(1),
-    avgFps: Math.round(avg(valid.filter(r => r.avgFps).map(r => r.avgFps!))),
-    minFps: Math.round(avg(valid.filter(r => r.minFps).map(r => r.minFps!))),
-    totalFrames: Math.round(avg(valid.filter(r => r.totalFrames).map(r => r.totalFrames!))),
-    droppedFrames: Math.round(avg(valid.filter(r => r.droppedFrames != null).map(r => r.droppedFrames!))),
-    avgHeapUsagePercent: +avg(valid.filter(r => r.avgHeapUsagePercent).map(r => r.avgHeapUsagePercent!)).toFixed(1),
-    maxHeapUsagePercent: +avg(valid.filter(r => r.maxHeapUsagePercent).map(r => r.maxHeapUsagePercent!)).toFixed(1),
+    totalDurationMs: Math.round(med(valid.map(r => r.totalDurationMs))),
+    scenarioDurationMs: Math.round(med(valid.map(r => r.scenarioDurationMs))),
+    totalLongTasks: Math.round(med(valid.map(r => r.totalLongTasks))),
+    totalLongTasksMs: Math.round(med(valid.map(r => r.totalLongTasksMs))),
+    avgInputDelayMs: +med(valid.map(r => r.avgInputDelayMs)).toFixed(1),
+    maxInputDelayMs: +med(valid.map(r => r.maxInputDelayMs)).toFixed(1),
+    avgFps: Math.round(med(valid.filter(r => r.avgFps).map(r => r.avgFps!))),
+    minFps: Math.round(med(valid.filter(r => r.minFps).map(r => r.minFps!))),
+    totalFrames: Math.round(med(valid.filter(r => r.totalFrames).map(r => r.totalFrames!))),
+    droppedFrames: Math.round(med(valid.filter(r => r.droppedFrames != null).map(r => r.droppedFrames!))),
+    avgHeapUsagePercent: +med(valid.filter(r => r.avgHeapUsagePercent).map(r => r.avgHeapUsagePercent!)).toFixed(1),
+    maxHeapUsagePercent: +med(valid.filter(r => r.maxHeapUsagePercent).map(r => r.maxHeapUsagePercent!)).toFixed(1),
     success: true,
   };
 }
 
-async function collectSite(url: string, label: string): Promise<CompareData> {
-  const allMetrics: MetricResult[][] = [];
-  const allE2E: E2EResult[] = [];
+function extractPing(metrics: MetricResult[]): number | null {
+  const r = metrics.find(m => m.key === 'availability.ping');
+  const p = r?.payload as Record<string, unknown> | undefined;
+  return typeof p?.elapsedMs === 'number' ? p.elapsedMs : null;
+}
 
-  for (let i = 0; i < form.repeatCount; i++) {
-    progress.value = `${label}: замер ${i + 1}/${form.repeatCount} — метрики`;
-    const metrics = await metricsApi.collectAll({ url });
-    allMetrics.push(metrics);
+function extractTtfb(metrics: MetricResult[]): number | null {
+  const r = metrics.find(m => m.key === 'page.ttfb');
+  const p = r?.payload as Record<string, unknown> | undefined;
+  return typeof p?.ttfbMs === 'number' ? p.ttfbMs : null;
+}
 
-    if (form.runE2E) {
-      progress.value = `${label}: замер ${i + 1}/${form.repeatCount} — E2E`;
-      try {
-        const e2e = await metricsApi.runE2EScenario(pizzaScenario(url));
-        allE2E.push(e2e);
-      } catch (err) {
-        allE2E.push({
-          scenarioName: 'Pizza', url, steps: [],
-          totalDurationMs: 0, scenarioDurationMs: 0,
-          totalLongTasks: 0, totalLongTasksMs: 0,
-          avgInputDelayMs: 0, maxInputDelayMs: 0,
-          success: false, error: (err as Error).message,
-        });
-      }
+async function singleRun(url: string, label: string, runIdx: number, total: number): Promise<{ metrics: MetricResult[]; e2e: E2EResult | null }> {
+  progress.value = `${label}: замер ${runIdx}/${total} — метрики`;
+  const metrics = await metricsApi.collectAll({ url });
+  let e2e: E2EResult | null = null;
+  if (form.runE2E) {
+    progress.value = `${label}: замер ${runIdx}/${total} — E2E`;
+    try {
+      e2e = await metricsApi.runE2EScenario(pizzaScenario(url));
+    } catch (err) {
+      e2e = {
+        scenarioName: 'Pizza', url, steps: [],
+        totalDurationMs: 0, scenarioDurationMs: 0,
+        totalLongTasks: 0, totalLongTasksMs: 0,
+        avgInputDelayMs: 0, maxInputDelayMs: 0,
+        success: false, error: (err as Error).message,
+      };
     }
   }
-
-  return {
-    metrics: form.repeatCount > 1 ? averageMetrics(allMetrics) : allMetrics[0]!,
-    e2e: allE2E.length ? (form.repeatCount > 1 ? averageE2E(allE2E) : allE2E[0] ?? null) : null,
-  };
+  return { metrics, e2e };
 }
 
 async function handleCompare() {
@@ -144,10 +156,54 @@ async function handleCompare() {
   error.value = '';
   dataA.value = null;
   dataB.value = null;
+  stabilityA.value = { pings: [], ttfbs: [] };
+  stabilityB.value = { pings: [], ttfbs: [] };
+
+  const metricsA: MetricResult[][] = [];
+  const metricsB: MetricResult[][] = [];
+  const e2eA: E2EResult[] = [];
+  const e2eB: E2EResult[] = [];
 
   try {
-    dataA.value = await collectSite(form.urlA, form.labelA);
-    dataB.value = await collectSite(form.urlB, form.labelB);
+    if (form.interleaved) {
+      for (let i = 0; i < form.repeatCount; i++) {
+        const a = await singleRun(form.urlA, form.labelA, i + 1, form.repeatCount);
+        metricsA.push(a.metrics);
+        if (a.e2e) e2eA.push(a.e2e);
+        const pA = extractPing(a.metrics); if (pA != null) stabilityA.value.pings.push(pA);
+        const tA = extractTtfb(a.metrics); if (tA != null) stabilityA.value.ttfbs.push(tA);
+
+        const b = await singleRun(form.urlB, form.labelB, i + 1, form.repeatCount);
+        metricsB.push(b.metrics);
+        if (b.e2e) e2eB.push(b.e2e);
+        const pB = extractPing(b.metrics); if (pB != null) stabilityB.value.pings.push(pB);
+        const tB = extractTtfb(b.metrics); if (tB != null) stabilityB.value.ttfbs.push(tB);
+      }
+    } else {
+      for (let i = 0; i < form.repeatCount; i++) {
+        const a = await singleRun(form.urlA, form.labelA, i + 1, form.repeatCount);
+        metricsA.push(a.metrics);
+        if (a.e2e) e2eA.push(a.e2e);
+        const pA = extractPing(a.metrics); if (pA != null) stabilityA.value.pings.push(pA);
+        const tA = extractTtfb(a.metrics); if (tA != null) stabilityA.value.ttfbs.push(tA);
+      }
+      for (let i = 0; i < form.repeatCount; i++) {
+        const b = await singleRun(form.urlB, form.labelB, i + 1, form.repeatCount);
+        metricsB.push(b.metrics);
+        if (b.e2e) e2eB.push(b.e2e);
+        const pB = extractPing(b.metrics); if (pB != null) stabilityB.value.pings.push(pB);
+        const tB = extractTtfb(b.metrics); if (tB != null) stabilityB.value.ttfbs.push(tB);
+      }
+    }
+
+    dataA.value = {
+      metrics: form.repeatCount > 1 ? aggregateMetrics(metricsA) : metricsA[0]!,
+      e2e: e2eA.length ? (form.repeatCount > 1 ? aggregateE2E(e2eA) : e2eA[0] ?? null) : null,
+    };
+    dataB.value = {
+      metrics: form.repeatCount > 1 ? aggregateMetrics(metricsB) : metricsB[0]!,
+      e2e: e2eB.length ? (form.repeatCount > 1 ? aggregateE2E(e2eB) : e2eB[0] ?? null) : null,
+    };
     progress.value = '';
   } catch (err) {
     error.value = (err as Error).message;
@@ -156,6 +212,26 @@ async function handleCompare() {
     isRunning.value = false;
   }
 }
+
+const stabilityRows = computed<StabilityStat[]>(() => {
+  if (!dataA.value || !dataB.value) return [];
+  const stats: StabilityStat[] = [];
+  const buildStat = (metric: string, dataA: number[], dataB: number[]) => {
+    if (!dataA.length || !dataB.length) return;
+    stats.push({
+      metric,
+      meanA: dataA.reduce((a, b) => a + b, 0) / dataA.length,
+      sigmaA: stdDev(dataA),
+      cvA: coefficientOfVariation(dataA),
+      meanB: dataB.reduce((a, b) => a + b, 0) / dataB.length,
+      sigmaB: stdDev(dataB),
+      cvB: coefficientOfVariation(dataB),
+    });
+  };
+  buildStat('Ping, ms', stabilityA.value.pings, stabilityB.value.pings);
+  buildStat('TTFB, ms', stabilityA.value.ttfbs, stabilityB.value.ttfbs);
+  return stats;
+});
 
 // --- Comparison table logic ---
 
@@ -370,6 +446,10 @@ function exportCSV() {
               <input type="checkbox" v-model="form.runE2E">
               <span>E2E тест</span>
             </label>
+            <label class="checkbox-label" title="A/B/A/B... вместо AAAA.../BBBB...">
+              <input type="checkbox" v-model="form.interleaved">
+              <span>Чередование A/B</span>
+            </label>
             <div class="repeat-row">
               <span>Повторений:</span>
               <input v-model.number="form.repeatCount" type="number" min="1" max="20" class="repeat-input">
@@ -388,6 +468,45 @@ function exportCSV() {
 
       <!-- Error -->
       <div v-if="error" class="error-banner">{{ error }}</div>
+
+      <!-- Network stability -->
+      <CardSurface v-if="stabilityRows.length">
+        <template #header>
+          <h2 style="margin: 0;">Стабильность сети</h2>
+        </template>
+        <p class="stability-hint">
+          Низкие σ и CV (≤10%) подтверждают стабильность канала во время серии замеров.
+          Большие значения означают, что сеть существенно колебалась — результаты могут содержать систематическое смещение.
+        </p>
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th class="col-metric">Metric</th>
+                <th class="col-val">{{ form.labelA }} (mean ± σ, CV)</th>
+                <th class="col-val">{{ form.labelB }} (mean ± σ, CV)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="s in stabilityRows" :key="s.metric">
+                <td class="col-metric">{{ s.metric }}</td>
+                <td class="col-val mono">
+                  {{ s.meanA.toFixed(1) }} ± {{ s.sigmaA.toFixed(1) }}
+                  <span :class="s.cvA <= 10 ? 'delta-better' : s.cvA <= 25 ? 'delta-neutral' : 'delta-worse'">
+                    ({{ s.cvA.toFixed(1) }}%)
+                  </span>
+                </td>
+                <td class="col-val mono">
+                  {{ s.meanB.toFixed(1) }} ± {{ s.sigmaB.toFixed(1) }}
+                  <span :class="s.cvB <= 10 ? 'delta-better' : s.cvB <= 25 ? 'delta-neutral' : 'delta-worse'">
+                    ({{ s.cvB.toFixed(1) }}%)
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </CardSurface>
 
       <!-- Results -->
       <CardSurface v-if="groupedRows.length">
@@ -562,6 +681,12 @@ function exportCSV() {
 .delta-better { color: #16a34a; }
 .delta-worse { color: #dc2626; }
 .delta-neutral { color: #6b7280; }
+
+.stability-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
 
 @media (max-width: 640px) {
   .form-row { grid-template-columns: 1fr; }

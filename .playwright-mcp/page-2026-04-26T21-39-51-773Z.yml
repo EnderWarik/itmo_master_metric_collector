@@ -1,0 +1,166 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - link "V!U!E! Pizza logo" [ref=e6] [cursor=pointer]:
+      - /url: /
+      - img "V!U!E! Pizza logo" [ref=e7]
+    - link "0 ₽" [ref=e9] [cursor=pointer]:
+      - /url: /cart
+    - link "Войти" [ref=e11] [cursor=pointer]:
+      - /url: /login
+      - generic [ref=e12]: Войти
+  - main [ref=e13]:
+    - main [ref=e17]:
+      - generic [ref=e19]:
+        - heading "Конструктор пиццы" [level=1] [ref=e20]
+        - generic [ref=e22]:
+          - heading "Выберите тесто" [level=2] [ref=e24]
+          - generic [ref=e25]:
+            - generic [ref=e26] [cursor=pointer]:
+              - text: Тонкое
+              - generic [ref=e28]: Из твердых сортов пшеницы
+            - generic [ref=e29] [cursor=pointer]:
+              - text: Толстое
+              - generic [ref=e31]: Из твердых сортов пшеницы
+        - generic [ref=e33]:
+          - heading "Выберите размер" [level=2] [ref=e35]
+          - generic [ref=e36]:
+            - generic [ref=e37] [cursor=pointer]: 23 см
+            - generic [ref=e39] [cursor=pointer]: 32 см
+            - generic [ref=e41] [cursor=pointer]: 45 см
+        - generic [ref=e44]:
+          - heading "Выберите ингредиенты" [level=2] [ref=e46]
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - paragraph [ref=e50]: "Основной соус:"
+              - generic [ref=e52] [cursor=pointer]: Томатный
+              - generic [ref=e54] [cursor=pointer]: Сливочный
+            - generic [ref=e55]:
+              - paragraph [ref=e56]: "Начинка:"
+              - list [ref=e57]:
+                - listitem [ref=e58]:
+                  - generic [ref=e60]: Грибы
+                  - generic [ref=e61]:
+                    - button "Меньше" [disabled] [ref=e62]:
+                      - generic [ref=e63]: Меньше
+                    - textbox [disabled] [ref=e64]: "0"
+                    - button "Больше" [ref=e65] [cursor=pointer]:
+                      - generic [ref=e66]: Больше
+                - listitem [ref=e67]:
+                  - generic [ref=e69]: Чеддер
+                  - generic [ref=e70]:
+                    - button "Меньше" [disabled] [ref=e71]:
+                      - generic [ref=e72]: Меньше
+                    - textbox [disabled] [ref=e73]: "0"
+                    - button "Больше" [ref=e74] [cursor=pointer]:
+                      - generic [ref=e75]: Больше
+                - listitem [ref=e76]:
+                  - generic [ref=e78]: Ветчина
+                  - generic [ref=e79]:
+                    - button "Меньше" [disabled] [ref=e80]:
+                      - generic [ref=e81]: Меньше
+                    - textbox [disabled] [ref=e82]: "0"
+                    - button "Больше" [ref=e83] [cursor=pointer]:
+                      - generic [ref=e84]: Больше
+                - listitem [ref=e85]:
+                  - generic [ref=e87]: Салями
+                  - generic [ref=e88]:
+                    - button "Меньше" [disabled] [ref=e89]:
+                      - generic [ref=e90]: Меньше
+                    - textbox [disabled] [ref=e91]: "0"
+                    - button "Больше" [ref=e92] [cursor=pointer]:
+                      - generic [ref=e93]: Больше
+                - listitem [ref=e94]:
+                  - generic [ref=e96]: Ананас
+                  - generic [ref=e97]:
+                    - button "Меньше" [disabled] [ref=e98]:
+                      - generic [ref=e99]: Меньше
+                    - textbox [disabled] [ref=e100]: "0"
+                    - button "Больше" [ref=e101] [cursor=pointer]:
+                      - generic [ref=e102]: Больше
+                - listitem [ref=e103]:
+                  - generic [ref=e105]: Бекон
+                  - generic [ref=e106]:
+                    - button "Меньше" [disabled] [ref=e107]:
+                      - generic [ref=e108]: Меньше
+                    - textbox [disabled] [ref=e109]: "0"
+                    - button "Больше" [ref=e110] [cursor=pointer]:
+                      - generic [ref=e111]: Больше
+                - listitem [ref=e112]:
+                  - generic [ref=e114]: Томаты
+                  - generic [ref=e115]:
+                    - button "Меньше" [disabled] [ref=e116]:
+                      - generic [ref=e117]: Меньше
+                    - textbox [disabled] [ref=e118]: "0"
+                    - button "Больше" [ref=e119] [cursor=pointer]:
+                      - generic [ref=e120]: Больше
+                - listitem [ref=e121]:
+                  - generic [ref=e123]: Лосось
+                  - generic [ref=e124]:
+                    - button "Меньше" [disabled] [ref=e125]:
+                      - generic [ref=e126]: Меньше
+                    - textbox [disabled] [ref=e127]: "0"
+                    - button "Больше" [ref=e128] [cursor=pointer]:
+                      - generic [ref=e129]: Больше
+                - listitem [ref=e130]:
+                  - generic [ref=e132]: Моцарелла
+                  - generic [ref=e133]:
+                    - button "Меньше" [disabled] [ref=e134]:
+                      - generic [ref=e135]: Меньше
+                    - textbox [disabled] [ref=e136]: "0"
+                    - button "Больше" [ref=e137] [cursor=pointer]:
+                      - generic [ref=e138]: Больше
+                - listitem [ref=e139]:
+                  - generic [ref=e141]: Пармезан
+                  - generic [ref=e142]:
+                    - button "Меньше" [disabled] [ref=e143]:
+                      - generic [ref=e144]: Меньше
+                    - textbox [disabled] [ref=e145]: "0"
+                    - button "Больше" [ref=e146] [cursor=pointer]:
+                      - generic [ref=e147]: Больше
+                - listitem [ref=e148]:
+                  - generic [ref=e150]: Блю чиз
+                  - generic [ref=e151]:
+                    - button "Меньше" [disabled] [ref=e152]:
+                      - generic [ref=e153]: Меньше
+                    - textbox [disabled] [ref=e154]: "0"
+                    - button "Больше" [ref=e155] [cursor=pointer]:
+                      - generic [ref=e156]: Больше
+                - listitem [ref=e157]:
+                  - generic [ref=e159]: Халапеньо
+                  - generic [ref=e160]:
+                    - button "Меньше" [disabled] [ref=e161]:
+                      - generic [ref=e162]: Меньше
+                    - textbox [disabled] [ref=e163]: "0"
+                    - button "Больше" [ref=e164] [cursor=pointer]:
+                      - generic [ref=e165]: Больше
+                - listitem [ref=e166]:
+                  - generic [ref=e168]: Чили
+                  - generic [ref=e169]:
+                    - button "Меньше" [disabled] [ref=e170]:
+                      - generic [ref=e171]: Меньше
+                    - textbox [disabled] [ref=e172]: "0"
+                    - button "Больше" [ref=e173] [cursor=pointer]:
+                      - generic [ref=e174]: Больше
+                - listitem [ref=e175]:
+                  - generic [ref=e177]: Маслины
+                  - generic [ref=e178]:
+                    - button "Меньше" [disabled] [ref=e179]:
+                      - generic [ref=e180]: Меньше
+                    - textbox [disabled] [ref=e181]: "0"
+                    - button "Больше" [ref=e182] [cursor=pointer]:
+                      - generic [ref=e183]: Больше
+                - listitem [ref=e184]:
+                  - generic [ref=e186]: Лук
+                  - generic [ref=e187]:
+                    - button "Меньше" [disabled] [ref=e188]:
+                      - generic [ref=e189]: Меньше
+                    - textbox [disabled] [ref=e190]: "0"
+                    - button "Больше" [ref=e191] [cursor=pointer]:
+                      - generic [ref=e192]: Больше
+        - generic [ref=e193]:
+          - generic [ref=e194]:
+            - generic [ref=e195]: Название пиццы
+            - textbox "Название пиццы" [ref=e196]
+          - generic [ref=e201]:
+            - paragraph [ref=e202]: "Итого: 350 ₽"
+            - button "Готовьте!" [disabled] [ref=e203]

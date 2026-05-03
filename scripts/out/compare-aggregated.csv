@@ -1,0 +1,38 @@
+﻿Group;Metric;Monolith_median;MFE_median;Delta_median;Monolith_mean;MFE_mean;Delta_mean;Monolith_std;MFE_std
+Ping;Elapsed, ms;15;15.5;+3.3%;19.3;15.6;-19.2%;10.85;3.37
+TTFB;TTFB, ms;12.5;14.5;+16.0%;17.1;14;-18.1%;10.26;2.79
+TTFB;DNS Lookup, ms;8.5;9.5;+11.8%;9.2;9.6;+4.3%;1.81;2.12
+TTFB;TCP Connect, ms;1;1;+0.0%;1.8;1.4;-22.2%;1.62;0.52
+TTFB;Server Processing, ms;3.5;3;-14.3%;6.2;3;-51.6%;7.52;1.15
+Navigation Timing;Response, ms;0;0;-;0.1;0;-100.0%;0.32;0.00
+Navigation Timing;DOM Parse, ms;5;6;+20.0%;5.1;7;+37.3%;0.74;4.69
+Navigation Timing;Execute Scripts, ms;14;5;-64.3%;14.7;7.2;-51.0%;1.49;5.27
+Navigation Timing;Sub Resources, ms;4;0;-100.0%;4.8;0;-100.0%;1.55;0.00
+Navigation Timing;DOMContentLoaded, ms;21.5;13;-39.5%;22;16.4;-25.5%;2.31;12.24
+Navigation Timing;Load Event, ms;26;13;-50.0%;26.7;16.5;-38.2%;3.27;12.20
+Navigation Timing;Total, ms;26;13;-50.0%;26.7;16.5;-38.2%;3.27;12.20
+Lighthouse;Speed Index, ms;1956;2778.5;+42.1%;1928.6;2850;+47.8%;182.01;317.79
+Lighthouse;FCP, ms;1956;2778.5;+42.1%;1928.6;2850;+47.8%;182.01;317.79
+Lighthouse;LCP, ms;3307;6833.5;+106.6%;3307.8;6800.9;+105.6%;1.69;58.36
+Lighthouse;TTI, ms;3307;6833.5;+106.6%;3307.8;6801.6;+105.6%;1.69;58.23
+Lighthouse;TBT, ms;0;0;-;0;0;-;0.00;0.00
+Lighthouse;CLS;0.089141;0.089264;+0.1%;0.0802596;0.089264;+11.2%;0.03;0.00
+Lighthouse;Performance Score;69;57.5;-16.7%;69.5;57.5;-17.3%;1.58;1.27
+Resources;Total Resources;39;82;+110.3%;39;82;+110.3%;0.00;0.00
+Resources;Transfer Size;273421;671425;+145.6%;273421;671425;+145.6%;0.00;0.00
+Resources;Scripts Count;6;46;+666.7%;6;46;+666.7%;0.00;0.00
+Resources;Scripts Size;79518;287882;+262.0%;79518;287882;+262.0%;0.00;0.00
+Resources;Unique Domains;1;1;+0.0%;1;1;+0.0%;0.00;0.00
+V8 / Rendering;JS Parse, ms;13;68;+423.1%;13.1;66.3;+406.1%;1.20;16.60
+V8 / Rendering;JS Compile, ms;11;22;+100.0%;10.8;22.4;+107.4%;0.63;1.58
+V8 / Rendering;Task Duration, ms;90.5;136.5;+50.8%;97;140.3;+44.6%;21.92;23.08
+V8 / Rendering;Layout Count;5;7;+40.0%;5.2;7.2;+38.5%;1.14;1.03
+V8 / Rendering;Recalc Style Count;8;12;+50.0%;8;12;+50.0%;0.94;1.41
+V8 / Rendering;JS Heap Used;3630512;5815586;+60.2%;3627802;5787728;+59.5%;7725.02;110594.54
+V8 / Rendering;DOM Nodes;1050;2091;+99.1%;1050;2091;+99.1%;0.00;0.00
+E2E Scenario;Scenario Duration, ms;11883;11835.5;-0.4%;11873.1;11856.5;-0.1%;57.24;78.55
+E2E Scenario;Avg Input Delay, ms;5;4;-20.0%;5;4.2;-16.0%;1.33;0.79
+E2E Scenario;Max Input Delay, ms;8.5;7;-17.6%;9.8;7.9;-19.4%;4.29;2.13
+E2E Scenario;Total Long Tasks;0;0;-;0;0;-;0.00;0.00
+E2E Scenario;Avg Heap Usage, %;66;64;-3.0%;65.9;63.5;-3.6%;0.99;1.18
+E2E Scenario;Max Heap Usage, %;69;71;+2.9%;69.3;70.7;+2.0%;0.48;2.16

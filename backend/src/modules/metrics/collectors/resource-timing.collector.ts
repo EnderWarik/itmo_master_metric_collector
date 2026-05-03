@@ -232,7 +232,7 @@ export class ResourceTimingCollector
             const jsHeapTotalSize = Math.round(getMetric('JSHeapTotalSize'));
             const layoutCount = Math.round(getMetric('LayoutCount'));
             const recalcStyleCount = Math.round(getMetric('RecalcStyleCount'));
-            const domNodes = Math.round(getMetric('Nodes'));
+            const domNodes = await page.evaluate(() => document.getElementsByTagName('*').length);
             const jsEventListeners = Math.round(getMetric('JSEventListeners'));
 
 

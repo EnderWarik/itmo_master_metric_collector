@@ -1,7 +1,6 @@
 import { IsUrl } from 'class-validator';
 
 export class CollectMetricsDto {
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   url!: string;
 }
-
